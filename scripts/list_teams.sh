@@ -2,13 +2,16 @@
 
 set -eu
 
-cat $WD/data/teams-2018-08-01-2019-08-01.json \
+start="2018-08-01"
+end="2019-08-01"
+
+cat "$WD/data/teams-$start-$end.json" \
     | jq -c '
-        .teams[] |
-            { team_name: .name
-            , team_id: .id
-            , abbreviation: .abbreviation
-            , venue_name: .venue.name
-            , venue_id: .venue.id
-            }
+        .teams[] | {
+            team_name: .name,
+            team_id: .id,
+            abbreviation: .abbreviation,
+            venue_name: .venue.name,
+            venue_id: .venue.id,
+        }
     '
