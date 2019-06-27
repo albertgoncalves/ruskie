@@ -8,6 +8,7 @@ opt-level=3
 lto=true
 
 [dependencies]
+serde_json = "1.0"
 
 [[bin]]
 name = "main"
