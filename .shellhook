@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+if [ $(uname -s) = "Darwin" ]; then
+    alias ls='ls --color=auto'
+    alias ll='ls -l'
+else
+    alias open="xdg-open"
+fi
+
+export WD=$(pwd)
+export RUSTUP_HOME="$WD/.rustup_home"
+export CARGO_HOME="$WD/.cargo_home"
+
+for dir in $RUSTUP_HOME $CARGO_HOME/bin data; do
+    if [ ! -d $dir ]; then
+        mkdir -p $dir
+    fi
+done
+
+PATH="$PATH:$CARGO_HOME/bin"
+
+if [ ! -f .init ]; then
+    rustup install stable
+    rustup default stable
+    rustup component add rustfmt
+    rustup component add clippy
+    touch .init
+fi
+
+rustup update
+
+rustfmts() {
+    for f in $WD/dev/src/*.rs; do
+        echo $f
+        rustfmt $f
+    done
+}
+
+export -f rustfmts
+alias rusttest="cargo test -q --bin main"
+alias clippy="cargo clippy -- -D warnings -W clippy::pedantic"
