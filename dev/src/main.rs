@@ -28,24 +28,26 @@ struct Blob {
     teams: Vec<Team>,
 }
 
-fn read_file<T: AsRef<Path>>(path: T) -> Option<Blob> {
+fn read_json<T: AsRef<Path>>(path: T) -> Option<Blob> {
     File::open(path)
         .ok()
         .and_then(|f| from_reader(BufReader::new(f)).ok())
 }
 
 fn string_option<T: ToString>(x: Option<T>, default: String) -> String {
-    x.map(|y| y.to_string()).unwrap_or_else(|| default)
+    x.map_or_else(|| default, |y| y.to_string())
 }
 
 fn main() {
     if let Some(xs) = var("WD").ok().and_then(|wd| {
-        read_file(format!("{}/data/teams-2018-08-01-2019-08-01.json", wd))
+        read_json(format!("{}/data/teams-2018-08-01-2019-08-01.json", wd))
     }) {
+        println!("id,abbreviation,name,venue_id,venue_name");
         for x in xs.teams {
             println!(
-                "{},{},{},{}",
+                "{},{},{},{},{}",
                 x.id,
+                x.abbreviation,
                 x.name,
                 string_option(x.venue.id, "".to_string()),
                 x.venue.name,

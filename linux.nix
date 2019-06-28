@@ -5,7 +5,11 @@ with pkgs; mkShell {
         jq
         pkg-config
         rustup
-    ];
+    ] ++ (with python37Packages; [
+        (csvkit.overridePythonAttrs (oldAttrs: {
+            doCheck = false;
+        }))
+    ]);
     shellHook = ''
         . .shellhook
     '';
