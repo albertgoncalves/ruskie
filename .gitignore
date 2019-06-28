@@ -1,0 +1,10 @@
+*
+!.gitignore
+!shell
+!*.nix
+!scripts/
+!*.sh
+!dev/
+!src/
+!*.toml
+!*.rs
