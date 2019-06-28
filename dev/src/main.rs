@@ -8,13 +8,13 @@ use std::path::Path;
 #[derive(Serialize, Deserialize)]
 struct Venue {
     name: String,
-    id: Option<u32>,
+    id: Option<u16>,
 }
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
 struct Team {
-    id: u32,
+    id: u16,
     name: String,
     link: String,
     venue: Venue,
