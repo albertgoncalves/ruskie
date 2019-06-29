@@ -1,57 +1,59 @@
-use serde::{Deserialize, Serialize};
-use serde_json::from_reader;
+mod blobs;
+mod sql;
+mod void;
+
+use crate::blobs::{read_json, Team};
+use crate::sql::{
+    Ledger, CREATE_LEDGER, CREATE_TABLE, INSERT_LEDGER, INSERT_TEAM,
+    QUERY_LEDGER_ID,
+};
+use crate::void::ResultExt;
+use rusqlite::Connection;
 use std::env::var;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
 
-#[derive(Serialize, Deserialize)]
-struct Venue {
-    name: String,
-    id: Option<u16>,
-}
-
-#[allow(non_snake_case)]
-#[derive(Serialize, Deserialize)]
-struct Team {
-    id: u16,
-    name: String,
-    link: String,
-    venue: Venue,
-    abbreviation: String,
-    teamName: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Blob {
-    copyright: String,
-    teams: Vec<Team>,
-}
-
-fn read_json<T: AsRef<Path>>(path: T) -> Option<Blob> {
-    File::open(path)
-        .ok()
-        .and_then(|f| from_reader(BufReader::new(f)).ok())
-}
-
-fn string_option<T: ToString>(x: Option<T>, default: String) -> String {
-    x.map_or_else(|| default, |y| y.to_string())
+fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
+    if let Ok(t) = c.transaction() {
+        for team in teams {
+            t.execute(
+                INSERT_TEAM,
+                &[
+                    &ledger_id,
+                    &team.id,
+                    &team.name,
+                    &team.abbreviation,
+                    &team.venue.name,
+                ],
+            )
+            .void();
+        }
+        t.commit().void()
+    }
 }
 
 fn main() {
-    if let Some(xs) = var("WD").ok().and_then(|wd| {
-        read_json(format!("{}/data/teams-2018-08-01-2019-08-01.json", wd))
-    }) {
-        println!("id,abbreviation,name,venue_id,venue_name");
-        for x in xs.teams {
-            println!(
-                "{},{},{},{},{}",
-                x.id,
-                x.abbreviation,
-                x.name,
-                string_option(x.venue.id, "".to_string()),
-                x.venue.name,
-            )
-        }
-    };
+    let start = "2018-08-01";
+    let end = "2019-08-01";
+    if let Ok(wd) = var("WD") {
+        Connection::open(format!("{}/ruskie.db", wd))
+            .map(|mut c| {
+                c.execute(CREATE_LEDGER, &[]).void();
+                c.execute(CREATE_TABLE, &[]).void();
+                c.execute(INSERT_LEDGER, &[&start, &end]).void();
+                if let Ok(ledger) = c.query_row(
+                    QUERY_LEDGER_ID, //
+                    &[&start, &end], //
+                    |r| Ledger { id: r.get("id") },
+                ) {
+                    if let Some(xs) = read_json(format!(
+                        "{}/data/teams-{}-{}.json",
+                        wd,     //
+                        &start, //
+                        &end,
+                    )) {
+                        inject_teams(&mut c, ledger.id, &xs.teams);
+                    };
+                }
+            })
+            .void()
+    }
 }
