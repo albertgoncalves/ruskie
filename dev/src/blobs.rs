@@ -15,10 +15,8 @@ pub struct Venue {
 pub struct Team {
     pub id: u16,
     pub name: String,
-    pub link: String,
     pub venue: Venue,
     pub abbreviation: String,
-    pub teamName: String,
 }
 
 #[derive(Serialize, Deserialize)]
