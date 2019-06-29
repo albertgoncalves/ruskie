@@ -4,12 +4,10 @@ with pkgs; mkShell {
     buildInputs = [
         jq
         pkg-config
+        rlwrap
         rustup
-    ] ++ (with python37Packages; [
-        (csvkit.overridePythonAttrs (oldAttrs: {
-            doCheck = false;
-        }))
-    ]);
+        sqlite
+    ];
     shellHook = ''
         . .shellhook
     '';
