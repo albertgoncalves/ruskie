@@ -1,0 +1,103 @@
+mod blobs;
+mod sql;
+mod vars;
+mod void;
+
+use crate::blobs::{read_json, Team};
+use crate::sql::connect;
+use crate::vars::gather;
+use crate::void::{OptionExt, ResultExt};
+use rusqlite::Connection;
+
+const CREATE_LEDGER: &str = {
+    "CREATE TABLE IF NOT EXISTS ledger \
+     ( id INTEGER PRIMARY KEY \
+     , start DATE NOT NULL \
+     , end DATE NOT NULL \
+     , UNIQUE(start, end)
+     );"
+};
+
+const CREATE_TEAMS: &str = {
+    "CREATE TABLE IF NOT EXISTS teams \
+     ( id INTEGER PRIMARY KEY \
+     , ledger_id INTEGER \
+     , abbreviation TEXT NOT NULL \
+     , name TEXT NOT NULL \
+     , venue_name TEXT NOT NULL \
+     , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
+     , UNIQUE(id, ledger_id)
+     );"
+};
+
+const INSERT_LEDGER: &str = "INSERT INTO ledger (start, end) values (?1, ?2);";
+
+const INSERT_TEAMS: &str = {
+    "INSERT INTO teams \
+     ( ledger_id \
+     , id \
+     , abbreviation \
+     , name \
+     , venue_name \
+     ) values (?1, ?2, ?3, ?4, ?5);"
+};
+
+const QUERY_LEDGER_ID: &str = {
+    "SELECT * \
+     FROM ledger \
+     WHERE start = DATE(?1) \
+     AND end = DATE(?2);"
+};
+
+fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
+    if let Ok(t) = c.transaction() {
+        for team in teams {
+            t.execute(
+                INSERT_TEAMS,
+                &[
+                    &ledger_id,
+                    &team.id,
+                    &team.abbreviation,
+                    &team.name,
+                    &team.venue.name,
+                ],
+            )
+            .void();
+        }
+        t.commit().void()
+    }
+}
+
+fn init_db(start: &str, end: &str, wd: &str) {
+    connect(wd)
+        .map(|mut c| {
+            c.execute(CREATE_LEDGER, &[]).void();
+            c.execute(CREATE_TEAMS, &[]).void();
+            c.execute(INSERT_LEDGER, &[&start, &end]).void();
+            if let (Ok(x), Some(xs)) = (
+                c.query_row(
+                    QUERY_LEDGER_ID, //
+                    &[&start, &end], //
+                    |r| {
+                        let id: u32 = r.get("id");
+                        id
+                    },
+                ),
+                read_json(format!(
+                    "{}/data/teams-{}-{}.json",
+                    wd,    //
+                    start, //
+                    end,
+                )),
+            ) {
+                inject_teams(&mut c, x, &xs.teams);
+            }
+        })
+        .void()
+}
+
+fn main() {
+    gather()
+        .map(|(start, end, wd)| init_db(&start, &end, &wd))
+        .void()
+}

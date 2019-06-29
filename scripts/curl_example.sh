@@ -3,17 +3,16 @@
 set -eu
 
 echo $WD/data
-
-start="2018-08-01"
-end="2019-08-01"
+echo $START
+echo $END
 
 curl "https://statsapi.web.nhl.com/api/v1/teams" \
-    > "$WD/data/teams-$start-$end.json"
+    > "$WD/data/teams-$START-$END.json"
 
 team_id="54"
 
-curl "https://statsapi.web.nhl.com/api/v1/schedule?teamId=$team_id&startDate=$start&endDate=$end" \
-    > "$WD/data/schedule-$team_id-$start-$end.json"
+curl "https://statsapi.web.nhl.com/api/v1/schedule?teamId=$team_id&startDate=$START&endDate=$END" \
+    > "$WD/data/schedule-$team_id-$START-$END.json"
 
 game_id="2018020861"
 
