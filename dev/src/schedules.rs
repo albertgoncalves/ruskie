@@ -3,18 +3,13 @@ mod sql;
 mod vars;
 mod void;
 
-use crate::blobs::read_json;
+use crate::blobs::{get_to_file, read_json};
 use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
-use reqwest::Client;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::BufWriter;
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 struct Id {
@@ -91,21 +86,6 @@ const INSERT_SCHEDULES: &str = {
      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11);"
 };
 
-fn get_to_file(url: &str, filename: &Path) {
-    if !filename.exists() {
-        println!("{}", url);
-        let buffer = File::create(filename).map(BufWriter::new).ok();
-        let client = Client::new();
-        client
-            .get(url)
-            .send()
-            .ok()
-            .and_then(|mut r| buffer.and_then(|mut f| r.copy_to(&mut f).ok()))
-            .void();
-        sleep(Duration::from_millis(500))
-    }
-}
-
 fn filename(wd: &str, id: u32, start: &str, end: &str) -> String {
     format!("{}/data/schedule-{}-{}-{}.json", wd, id, start, end)
 }
@@ -132,7 +112,7 @@ fn scrape(
         let u: String = url(x, &start, &end);
         let p: String = filename(&wd, x, &start, &end);
         println!("{}", &p);
-        get_to_file(&u, Path::new(&p));
+        get_to_file(&u, Path::new(&p), 500);
         read_json(p)
     })
 }

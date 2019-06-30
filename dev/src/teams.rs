@@ -6,7 +6,7 @@ mod void;
 use crate::blobs::read_json;
 use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
-use crate::void::{OptionExt, ResultExt};
+use crate::void::ResultExt;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
