@@ -20,7 +20,7 @@ mod test {
         assert_eq!(
             json,
             Game {
-                gamePk: Number::from(N)
+                gamePk: Number::from(N),
             },
         )
     }
