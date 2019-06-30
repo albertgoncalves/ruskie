@@ -42,7 +42,7 @@ clippy() {
 
 export -f rustfmts
 export -f clippy
-alias rusttest="cargo test -q --bin main"
+alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 --column --header"
 
 export START="2018-08-01"
