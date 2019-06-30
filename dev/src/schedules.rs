@@ -73,10 +73,10 @@ const QUERY_TEAM_IDS: &str = {
 const INSERT_SCHEDULES: &str = {
     "INSERT INTO schedules \
      ( id \
-     , ledger_id
-     , status_abstract
-     , status_detailed
-     , status_start_time_tbd
+     , ledger_id \
+     , status_abstract \
+     , status_detailed \
+     , status_start_time_tbd \
      , date \
      , type \
      , season \
