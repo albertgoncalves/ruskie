@@ -1,5 +1,6 @@
 mod blobs;
 mod sql;
+mod test_schedules;
 mod vars;
 mod void;
 
