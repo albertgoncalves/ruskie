@@ -83,7 +83,7 @@ const INSERT_TEAMS: &str = {
      ) values (?1, ?2, ?3, ?4, ?5);"
 };
 
-fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
+fn insert_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
     if let Ok(t) = c.transaction() {
         for team in teams {
             println!("{}", team.abbreviation);
@@ -103,32 +103,30 @@ fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
     }
 }
 
-fn init_db(start: &str, end: &str, wd: &str) {
-    connect(wd)
-        .map(|mut c| {
-            c.execute(CREATE_LEDGER, &[]).void();
-            c.execute(CREATE_TEAMS, &[]).void();
-            c.execute(CREATE_SCHEDULES, &[]).void();
-            c.execute(INSERT_LEDGER, &[&start, &end]).void();
-            if let (Some(ledger_id), Some(teams)) =
-                (query_ledger_id(&start, &end, &c), {
-                    let teams: Option<Teams> = read_json(format!(
-                        "{}/data/teams-{}-{}.json",
-                        wd,    //
-                        start, //
-                        end,
-                    ));
-                    teams
-                })
-            {
-                inject_teams(&mut c, ledger_id, &teams.teams);
-            }
-        })
-        .void()
-}
-
 fn main() {
     gather()
-        .map(|(start, end, wd)| init_db(&start, &end, &wd))
+        .map(|(start, end, wd)| {
+            connect(&wd)
+                .map(|mut c| {
+                    c.execute(CREATE_LEDGER, &[]).void();
+                    c.execute(CREATE_TEAMS, &[]).void();
+                    c.execute(CREATE_SCHEDULES, &[]).void();
+                    c.execute(INSERT_LEDGER, &[&start, &end]).void();
+                    if let (Some(ledger_id), Some(teams)) =
+                        (query_ledger_id(&start, &end, &c), {
+                            let teams: Option<Teams> = read_json(format!(
+                                "{}/data/teams-{}-{}.json",
+                                &wd,    //
+                                &start, //
+                                &end,
+                            ));
+                            teams
+                        })
+                    {
+                        insert_teams(&mut c, ledger_id, &teams.teams);
+                    }
+                })
+                .void()
+        })
         .void()
 }
