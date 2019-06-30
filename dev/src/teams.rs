@@ -3,11 +3,32 @@ mod sql;
 mod vars;
 mod void;
 
-use crate::blobs::{read_json, Team};
+use crate::blobs::read_json;
 use crate::sql::connect;
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct Venue {
+    name: String,
+    id: Option<u16>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize)]
+struct Team {
+    id: u16,
+    name: String,
+    venue: Venue,
+    abbreviation: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Teams {
+    teams: Vec<Team>,
+}
 
 const CREATE_LEDGER: &str = {
     "CREATE TABLE IF NOT EXISTS ledger \
@@ -27,6 +48,22 @@ const CREATE_TEAMS: &str = {
      , venue_name TEXT NOT NULL \
      , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
      , UNIQUE(id, ledger_id)
+     );"
+};
+
+const CREATE_SCHEDULES: &str = {
+    "CREATE TABLE IF NOT EXISTS schedules \
+     ( id INTEGER PRIMARY KEY \
+     , date DATE NOT NULL \
+     , type TEXT NOT NULL \
+     , season TEXT NOT NULL \
+     , home_team_id INTEGER \
+     , home_team_score INTEGER NOT NULL \
+     , away_team_id INTEGER \
+     , away_team_score INTEGER NOT NULL \
+     , venue_name TEXT NOT NULL \
+     , FOREIGN KEY (home_team_id) REFERENCES teams(id) \
+     , FOREIGN KEY (away_team_id) REFERENCES teams(id) \
      );"
 };
 
@@ -73,6 +110,7 @@ fn init_db(start: &str, end: &str, wd: &str) {
         .map(|mut c| {
             c.execute(CREATE_LEDGER, &[]).void();
             c.execute(CREATE_TEAMS, &[]).void();
+            c.execute(CREATE_SCHEDULES, &[]).void();
             c.execute(INSERT_LEDGER, &[&start, &end]).void();
             if let (Ok(x), Some(xs)) = (
                 c.query_row(
@@ -83,12 +121,15 @@ fn init_db(start: &str, end: &str, wd: &str) {
                         id
                     },
                 ),
-                read_json(format!(
-                    "{}/data/teams-{}-{}.json",
-                    wd,    //
-                    start, //
-                    end,
-                )),
+                {
+                    let xs: Option<Teams> = read_json(format!(
+                        "{}/data/teams-{}-{}.json",
+                        wd,    //
+                        start, //
+                        end,
+                    ));
+                    xs
+                },
             ) {
                 inject_teams(&mut c, x, &xs.teams);
             }
