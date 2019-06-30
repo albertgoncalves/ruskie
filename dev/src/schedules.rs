@@ -9,6 +9,7 @@ use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
+use serde_json::Number;
 use std::path::Path;
 
 #[derive(Serialize, Deserialize)]
@@ -44,7 +45,7 @@ struct Status {
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
 struct Game {
-    gamePk: u32,
+    gamePk: Number,
     gameType: String,
     season: String,
     status: Status,
@@ -124,7 +125,7 @@ fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
                 t.execute(
                     INSERT_SCHEDULES,
                     &[
-                        &game.gamePk,
+                        &game.gamePk.to_string(),
                         &ledger_id,
                         &game.status.abstractGameState,
                         &game.status.detailedState,

@@ -53,7 +53,7 @@ const CREATE_TEAMS: &str = {
 
 const CREATE_SCHEDULES: &str = {
     "CREATE TABLE IF NOT EXISTS schedules \
-     ( id INTEGER PRIMARY KEY \
+     ( id TEXT PRIMARY KEY \
      , ledger_id INTEGER \
      , status_abstract TEXT NOT NULL \
      , status_detailed TEXT NOT NULL \
