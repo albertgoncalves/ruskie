@@ -16,45 +16,54 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Id {
     id: u16,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Name {
     name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Team {
     score: u8,
     team: Id,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Teams {
     away: Team,
     home: Team,
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
+struct Status {
+    abstractGameState: String,
+    detailedState: String,
+    startTimeTBD: bool,
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize)]
 struct Game {
     gamePk: u32,
     gameType: String,
     season: String,
+    status: Status,
     teams: Teams,
     venue: Name,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Date {
     date: String,
     games: Vec<Game>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct Schedule {
     dates: Vec<Date>,
 }
@@ -63,22 +72,23 @@ const QUERY_TEAM_IDS: &str = {
     "SELECT t.id \
      FROM teams t \
      INNER JOIN ledger l ON l.id = t.ledger_id \
-     WHERE l.start = DATE(?1) \
-     AND l.end = DATE(?2);"
+     WHERE l.id = ?1;"
 };
 
 const INSERT_SCHEDULES: &str = {
     "INSERT INTO schedules \
      ( id \
+     , ledger_id
+     , status_abstract
+     , status_detailed
+     , status_start_time_tbd
      , date \
      , type \
      , season \
      , home_team_id \
-     , home_team_score \
      , away_team_id \
-     , away_team_score \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
+     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11);"
 };
 
 fn get_to_file(url: &str, filename: &Path) {
@@ -135,13 +145,15 @@ fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
                     INSERT_SCHEDULES,
                     &[
                         &game.gamePk,
+                        &ledger_id,
+                        &game.status.abstractGameState,
+                        &game.status.detailedState,
+                        &game.status.startTimeTBD,
                         &date.date,
                         &game.gameType,
                         &game.season,
                         &game.teams.home.team.id,
-                        &game.teams.home.score,
                         &game.teams.away.team.id,
-                        &game.teams.away.score,
                         &game.venue.name,
                     ],
                 )

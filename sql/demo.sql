@@ -1,11 +1,10 @@
 select
     s.id
     , s.date
+    , s.status_abstract
     , ht.name as home_team
-    , s.home_team_score
     , ht.venue_name = s.venue_name as home
     , at.name as away_team
-    , s.away_team_score
     , at.venue_name = s.venue_name as home
     , s.venue_name
     , ht.venue_name as home_venue_name

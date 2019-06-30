@@ -35,7 +35,7 @@ const CREATE_LEDGER: &str = {
      ( id INTEGER PRIMARY KEY \
      , start DATE NOT NULL \
      , end DATE NOT NULL \
-     , UNIQUE(start, end)
+     , UNIQUE(start, end) \
      );"
 };
 
@@ -47,23 +47,27 @@ const CREATE_TEAMS: &str = {
      , name TEXT NOT NULL \
      , venue_name TEXT NOT NULL \
      , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
-     , UNIQUE(id, ledger_id)
+     , UNIQUE(id, ledger_id) \
      );"
 };
 
 const CREATE_SCHEDULES: &str = {
     "CREATE TABLE IF NOT EXISTS schedules \
      ( id INTEGER PRIMARY KEY \
+     , ledger_id INTEGER \
+     , status_abstract TEXT NOT NULL \
+     , status_detailed TEXT NOT NULL \
+     , status_start_time_tbd BOOLEAN NOT NULL \
      , date DATE NOT NULL \
      , type TEXT NOT NULL \
      , season TEXT NOT NULL \
      , home_team_id INTEGER \
-     , home_team_score INTEGER NOT NULL \
      , away_team_id INTEGER \
-     , away_team_score INTEGER NOT NULL \
      , venue_name TEXT NOT NULL \
+     , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
      , FOREIGN KEY (home_team_id) REFERENCES teams(id) \
      , FOREIGN KEY (away_team_id) REFERENCES teams(id) \
+     , UNIQUE(id, ledger_id) \
      );"
 };
 
