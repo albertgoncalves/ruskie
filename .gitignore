@@ -11,3 +11,4 @@
 !src/
 !*.toml
 !*.rs
+!dev/main
