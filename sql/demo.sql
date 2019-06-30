@@ -8,8 +8,8 @@ select
     , s.away_team_score
     , at.venue_name = s.venue_name as home
     , s.venue_name
-    , ht.venue_name
-    , at.venue_name
+    , ht.venue_name as home_venue_name
+    , at.venue_name as away_venue_name
 from
     schedules s
 inner join
