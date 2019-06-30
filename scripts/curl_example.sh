@@ -18,11 +18,11 @@ f "https://statsapi.web.nhl.com/api/v1/teams" \
 team_id="54"
 
 f "https://statsapi.web.nhl.com/api/v1/schedule?teamId=$team_id&startDate=$START&endDate=$END" \
-    "$WD/data/schedule/$team_id-$START-$END.json"
+    "$WD/data/schedules/$team_id-$START-$END.json"
 
 game_id="2018020861"
 
 f "http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId=$game_id" \
-    "$WD/data/shifts/$game_id.json"
+    "$WD/data/shifts/$game_id-$START-$END.json"
 f "https://statsapi.web.nhl.com/api/v1/game/$game_id/feed/live?site=en_nhl" \
-    "$WD/data/game/$game_id.json"
+    "$WD/data/games/$game_id-$START-$END.json"

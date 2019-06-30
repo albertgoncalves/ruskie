@@ -1,11 +1,13 @@
 mod blobs;
 mod sql;
 mod test_schedules;
+mod theft;
 mod vars;
 mod void;
 
-use crate::blobs::{get_to_file, read_json};
+use crate::blobs::read_json;
 use crate::sql::{connect, query_ledger_id};
+use crate::theft::{filename, get_to_file};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
@@ -87,10 +89,6 @@ const INSERT_SCHEDULES: &str = {
      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11);"
 };
 
-fn filename(wd: &str, id: u32, start: &str, end: &str) -> String {
-    format!("{}/data/schedule/{}-{}-{}.json", wd, id, start, end)
-}
-
 fn url(id: u32, start: &str, end: &str) -> String {
     format!(
         "https://statsapi.web.nhl.com/api/v1/schedule?\
@@ -109,12 +107,11 @@ fn scrape(
     wd: &str,
     id: Option<u32>,
 ) -> Option<Schedule> {
-    id.and_then(|x| {
-        let u: String = url(x, &start, &end);
-        let p: String = filename(&wd, x, &start, &end);
-        println!("{}", &p);
-        get_to_file(&u, Path::new(&p), 500);
-        read_json(p)
+    id.and_then(|id| {
+        let x: String = filename(&wd, "schedules", id, &start, &end);
+        println!("{}", &x);
+        get_to_file(&url(id, &start, &end), Path::new(&x), 500);
+        read_json(x)
     })
 }
 
