@@ -4,7 +4,7 @@ mod vars;
 mod void;
 
 use crate::blobs::read_json;
-use crate::sql::connect;
+use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use reqwest::Client;
@@ -127,7 +127,7 @@ fn scrape(
     })
 }
 
-fn insert(schedule: Schedule, c: &mut Connection) {
+fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
         for date in schedule.dates {
             for game in date.games {
@@ -155,24 +155,32 @@ fn insert(schedule: Schedule, c: &mut Connection) {
 fn main() {
     if let Some((start, end, wd)) = gather() {
         if let Ok(mut c) = connect(&wd) {
-            if let Ok(schedules) = {
-                c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
-                    s.query_map(&[&start, &end], |r| {
-                        let id: u32 = r.get("id");
-                        id
+            if let Some(ledger_id) = query_ledger_id(&start, &end, &c) {
+                if let Ok(schedules) = {
+                    c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
+                        s.query_map(&[&ledger_id], |r| {
+                            let id: u32 = r.get("id");
+                            id
+                        })
+                        .map(|ids| {
+                            let schedules: Vec<Option<Schedule>> = ids
+                                .map(|id| scrape(&start, &end, &wd, id.ok()))
+                                .collect();
+                            schedules
+                        })
                     })
-                    .map(|ids| {
-                        let schedules: Vec<Option<Schedule>> = ids
-                            .map(|id| scrape(&start, &end, &wd, id.ok()))
-                            .collect();
-                        schedules
-                    })
-                })
-            } {
-                schedules
-                    .into_iter()
-                    .map(|x| x.map(|y| insert(y, &mut c)).void())
-                    .collect()
+                } {
+                    schedules
+                        .into_iter()
+                        .map(|schedule| {
+                            schedule
+                                .map(|schedule| {
+                                    insert(schedule, ledger_id, &mut c)
+                                })
+                                .void()
+                        })
+                        .collect()
+                };
             };
         };
     };
