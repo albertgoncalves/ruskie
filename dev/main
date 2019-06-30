@@ -10,7 +10,7 @@ f () {
 cd $WD/dev
 clippy
 rustfmts
-for x in teams schedules; do
+for x in teams schedules games; do
     cargo test --bin $x
     cargo run --bin $x --release
 done

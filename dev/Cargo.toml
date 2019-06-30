@@ -16,3 +16,7 @@ path = "src/teams.rs"
 [[bin]]
 name = "schedules"
 path = "src/schedules.rs"
+
+[[bin]]
+name = "games"
+path = "src/games.rs"
