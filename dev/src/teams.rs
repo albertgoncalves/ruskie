@@ -4,20 +4,19 @@ mod vars;
 mod void;
 
 use crate::blobs::read_json;
-use crate::sql::connect;
+use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
-use crate::void::{OptionExt, ResultExt};
+use crate::void::ResultExt;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Venue {
     name: String,
-    id: Option<u16>,
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Team {
     id: u16,
     name: String,
@@ -25,7 +24,7 @@ struct Team {
     abbreviation: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Teams {
     teams: Vec<Team>,
 }
@@ -35,7 +34,7 @@ const CREATE_LEDGER: &str = {
      ( id INTEGER PRIMARY KEY \
      , start DATE NOT NULL \
      , end DATE NOT NULL \
-     , UNIQUE(start, end)
+     , UNIQUE(start, end) \
      );"
 };
 
@@ -47,23 +46,27 @@ const CREATE_TEAMS: &str = {
      , name TEXT NOT NULL \
      , venue_name TEXT NOT NULL \
      , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
-     , UNIQUE(id, ledger_id)
+     , UNIQUE(id, ledger_id) \
      );"
 };
 
 const CREATE_SCHEDULES: &str = {
     "CREATE TABLE IF NOT EXISTS schedules \
-     ( id INTEGER PRIMARY KEY \
+     ( id TEXT PRIMARY KEY \
+     , ledger_id INTEGER \
+     , status_abstract TEXT NOT NULL \
+     , status_detailed TEXT NOT NULL \
+     , status_start_time_tbd BOOLEAN NOT NULL \
      , date DATE NOT NULL \
      , type TEXT NOT NULL \
      , season TEXT NOT NULL \
      , home_team_id INTEGER \
-     , home_team_score INTEGER NOT NULL \
      , away_team_id INTEGER \
-     , away_team_score INTEGER NOT NULL \
      , venue_name TEXT NOT NULL \
+     , FOREIGN KEY (ledger_id) REFERENCES ledger(id) \
      , FOREIGN KEY (home_team_id) REFERENCES teams(id) \
      , FOREIGN KEY (away_team_id) REFERENCES teams(id) \
+     , UNIQUE(id, ledger_id) \
      );"
 };
 
@@ -79,16 +82,10 @@ const INSERT_TEAMS: &str = {
      ) values (?1, ?2, ?3, ?4, ?5);"
 };
 
-const QUERY_LEDGER_ID: &str = {
-    "SELECT * \
-     FROM ledger \
-     WHERE start = DATE(?1) \
-     AND end = DATE(?2);"
-};
-
-fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
+fn insert(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
     if let Ok(t) = c.transaction() {
         for team in teams {
+            println!("{}", team.abbreviation);
             t.execute(
                 INSERT_TEAMS,
                 &[
@@ -105,40 +102,26 @@ fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
     }
 }
 
-fn init_db(start: &str, end: &str, wd: &str) {
-    connect(wd)
-        .map(|mut c| {
+fn main() {
+    if let Some((start, end, wd)) = gather() {
+        if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_LEDGER, &[]).void();
             c.execute(CREATE_TEAMS, &[]).void();
             c.execute(CREATE_SCHEDULES, &[]).void();
             c.execute(INSERT_LEDGER, &[&start, &end]).void();
-            if let (Ok(x), Some(xs)) = (
-                c.query_row(
-                    QUERY_LEDGER_ID, //
-                    &[&start, &end], //
-                    |r| {
-                        let id: u32 = r.get("id");
-                        id
-                    },
-                ),
-                {
-                    let xs: Option<Teams> = read_json(format!(
+            if let (Some(ledger_id), Some(teams)) =
+                (query_ledger_id(&start, &end, &c), {
+                    let teams: Option<Teams> = read_json(format!(
                         "{}/data/teams-{}-{}.json",
-                        wd,    //
-                        start, //
-                        end,
+                        &wd,    //
+                        &start, //
+                        &end,
                     ));
-                    xs
-                },
-            ) {
-                inject_teams(&mut c, x, &xs.teams);
+                    teams
+                })
+            {
+                insert(&mut c, ledger_id, &teams.teams);
             }
-        })
-        .void()
-}
-
-fn main() {
-    gather()
-        .map(|(start, end, wd)| init_db(&start, &end, &wd))
-        .void()
+        }
+    }
 }

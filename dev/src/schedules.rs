@@ -1,60 +1,65 @@
 mod blobs;
 mod sql;
+mod test_schedules;
 mod vars;
 mod void;
 
-use crate::blobs::read_json;
-use crate::sql::connect;
+use crate::blobs::{get_to_file, read_json};
+use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
-use reqwest::Client;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::BufWriter;
+use serde::Deserialize;
+use serde_json::Number;
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Id {
     id: u16,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Name {
     name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Team {
-    score: u8,
     team: Id,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Teams {
     away: Team,
     home: Team,
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
+struct Status {
+    abstractGameState: String,
+    detailedState: String,
+    startTimeTBD: bool,
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize)]
 struct Game {
-    gamePk: u32,
+    gamePk: Number,
     gameType: String,
     season: String,
+    status: Status,
     teams: Teams,
     venue: Name,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Date {
     date: String,
     games: Vec<Game>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Schedule {
     dates: Vec<Date>,
 }
@@ -63,38 +68,24 @@ const QUERY_TEAM_IDS: &str = {
     "SELECT t.id \
      FROM teams t \
      INNER JOIN ledger l ON l.id = t.ledger_id \
-     WHERE l.start = DATE(?1) \
-     AND l.end = DATE(?2);"
+     WHERE l.id = ?1;"
 };
 
 const INSERT_SCHEDULES: &str = {
     "INSERT INTO schedules \
      ( id \
+     , ledger_id \
+     , status_abstract \
+     , status_detailed \
+     , status_start_time_tbd \
      , date \
      , type \
      , season \
      , home_team_id \
-     , home_team_score \
      , away_team_id \
-     , away_team_score \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
+     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11);"
 };
-
-fn get_to_file(url: &str, filename: &Path) {
-    if !filename.exists() {
-        println!("{}", url);
-        let buffer = File::create(filename).map(BufWriter::new).ok();
-        let client = Client::new();
-        client
-            .get(url)
-            .send()
-            .ok()
-            .and_then(|mut r| buffer.and_then(|mut f| r.copy_to(&mut f).ok()))
-            .void();
-        sleep(Duration::from_millis(500))
-    }
-}
 
 fn filename(wd: &str, id: u32, start: &str, end: &str) -> String {
     format!("{}/data/schedule-{}-{}-{}.json", wd, id, start, end)
@@ -122,26 +113,28 @@ fn scrape(
         let u: String = url(x, &start, &end);
         let p: String = filename(&wd, x, &start, &end);
         println!("{}", &p);
-        get_to_file(&u, Path::new(&p));
+        get_to_file(&u, Path::new(&p), 500);
         read_json(p)
     })
 }
 
-fn insert(schedule: Schedule, c: &mut Connection) {
+fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
         for date in schedule.dates {
             for game in date.games {
                 t.execute(
                     INSERT_SCHEDULES,
                     &[
-                        &game.gamePk,
+                        &game.gamePk.to_string(),
+                        &ledger_id,
+                        &game.status.abstractGameState,
+                        &game.status.detailedState,
+                        &game.status.startTimeTBD,
                         &date.date,
                         &game.gameType,
                         &game.season,
                         &game.teams.home.team.id,
-                        &game.teams.home.score,
                         &game.teams.away.team.id,
-                        &game.teams.away.score,
                         &game.venue.name,
                     ],
                 )
@@ -155,24 +148,32 @@ fn insert(schedule: Schedule, c: &mut Connection) {
 fn main() {
     if let Some((start, end, wd)) = gather() {
         if let Ok(mut c) = connect(&wd) {
-            if let Ok(schedules) = {
-                c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
-                    s.query_map(&[&start, &end], |r| {
-                        let id: u32 = r.get("id");
-                        id
+            if let Some(ledger_id) = query_ledger_id(&start, &end, &c) {
+                if let Ok(schedules) = {
+                    c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
+                        s.query_map(&[&ledger_id], |r| {
+                            let id: u32 = r.get("id");
+                            id
+                        })
+                        .map(|ids| {
+                            let schedules: Vec<Option<Schedule>> = ids
+                                .map(|id| scrape(&start, &end, &wd, id.ok()))
+                                .collect();
+                            schedules
+                        })
                     })
-                    .map(|ids| {
-                        let schedules: Vec<Option<Schedule>> = ids
-                            .map(|id| scrape(&start, &end, &wd, id.ok()))
-                            .collect();
-                        schedules
-                    })
-                })
-            } {
-                schedules
-                    .into_iter()
-                    .map(|x| x.map(|y| insert(y, &mut c)).void())
-                    .collect()
+                } {
+                    schedules
+                        .into_iter()
+                        .map(|schedule| {
+                            schedule
+                                .map(|schedule| {
+                                    insert(schedule, ledger_id, &mut c)
+                                })
+                                .void()
+                        })
+                        .collect()
+                };
             };
         };
     };

@@ -36,9 +36,13 @@ rustfmts() {
     done
 }
 
+clippy() {
+    cargo clippy -- -D warnings -W clippy::pedantic
+}
+
 export -f rustfmts
-alias rusttest="cargo test -q --bin main"
-alias clippy="cargo clippy -- -D warnings -W clippy::pedantic"
+export -f clippy
+alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 --column --header"
 
 export START="2018-08-01"

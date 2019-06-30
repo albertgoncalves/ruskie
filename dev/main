@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -eu
+
+f () {
+    printf "\nsql $1\n"
+    rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
+}
+
+cd $WD/dev
+clippy
+rustfmts
+for x in teams schedules; do
+    cargo test --bin $x
+    cargo run --bin $x --release
+done
+for x in ledger teams schedules; do
+    f "select count(*) from $x;"
+    f "select count(distinct id) from $x;"
+done
