@@ -88,7 +88,7 @@ const INSERT_SCHEDULES: &str = {
 };
 
 fn filename(wd: &str, id: u32, start: &str, end: &str) -> String {
-    format!("{}/data/schedule-{}-{}-{}.json", wd, id, start, end)
+    format!("{}/data/schedule/{}-{}-{}.json", wd, id, start, end)
 }
 
 fn url(id: u32, start: &str, end: &str) -> String {
