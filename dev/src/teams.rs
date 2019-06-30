@@ -83,16 +83,10 @@ const INSERT_TEAMS: &str = {
      ) values (?1, ?2, ?3, ?4, ?5);"
 };
 
-const QUERY_LEDGER_ID: &str = {
-    "SELECT * \
-     FROM ledger \
-     WHERE start = DATE(?1) \
-     AND end = DATE(?2);"
-};
-
 fn inject_teams(c: &mut Connection, ledger_id: u32, teams: &[Team]) {
     if let Ok(t) = c.transaction() {
         for team in teams {
+            println!("{}", team.abbreviation);
             t.execute(
                 INSERT_TEAMS,
                 &[
@@ -116,26 +110,18 @@ fn init_db(start: &str, end: &str, wd: &str) {
             c.execute(CREATE_TEAMS, &[]).void();
             c.execute(CREATE_SCHEDULES, &[]).void();
             c.execute(INSERT_LEDGER, &[&start, &end]).void();
-            if let (Ok(x), Some(xs)) = (
-                c.query_row(
-                    QUERY_LEDGER_ID, //
-                    &[&start, &end], //
-                    |r| {
-                        let id: u32 = r.get("id");
-                        id
-                    },
-                ),
-                {
-                    let xs: Option<Teams> = read_json(format!(
+            if let (Some(ledger_id), Some(teams)) =
+                (query_ledger_id(&start, &end, &c), {
+                    let teams: Option<Teams> = read_json(format!(
                         "{}/data/teams-{}-{}.json",
                         wd,    //
                         start, //
                         end,
                     ));
-                    xs
-                },
-            ) {
-                inject_teams(&mut c, x, &xs.teams);
+                    teams
+                })
+            {
+                inject_teams(&mut c, ledger_id, &teams.teams);
             }
         })
         .void()
