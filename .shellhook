@@ -11,9 +11,18 @@ export WD=$(pwd)
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 
-for dir in $RUSTUP_HOME $CARGO_HOME/bin data; do
-    if [ ! -d $dir ]; then
-        mkdir -p $dir
+xs=(
+    $RUSTUP_HOME
+    $CARGO_HOME/bin
+    $WD/data/teams
+    $WD/data/schedule
+    $WD/data/game
+    $WD/data/shifts
+)
+
+for x in "${xs[@]}"; do
+    if [ ! -d $x ]; then
+        mkdir -p $x
     fi
 done
 

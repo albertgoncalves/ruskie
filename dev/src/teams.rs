@@ -112,7 +112,7 @@ fn main() {
             if let (Some(ledger_id), Some(teams)) =
                 (query_ledger_id(&start, &end, &c), {
                     let teams: Option<Teams> = read_json(format!(
-                        "{}/data/teams-{}-{}.json",
+                        "{}/data/teams/{}-{}.json",
                         &wd,    //
                         &start, //
                         &end,
