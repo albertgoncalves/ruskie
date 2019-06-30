@@ -9,34 +9,33 @@ use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Number;
 use std::path::Path;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Id {
     id: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Name {
     name: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Team {
-    score: u8,
     team: Id,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Teams {
     away: Team,
     home: Team,
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Status {
     abstractGameState: String,
     detailedState: String,
@@ -44,7 +43,7 @@ struct Status {
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Game {
     gamePk: Number,
     gameType: String,
@@ -54,13 +53,13 @@ struct Game {
     venue: Name,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Date {
     date: String,
     games: Vec<Game>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Schedule {
     dates: Vec<Date>,
 }

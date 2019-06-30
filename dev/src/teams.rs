@@ -8,16 +8,15 @@ use crate::sql::{connect, query_ledger_id};
 use crate::vars::gather;
 use crate::void::ResultExt;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Venue {
     name: String,
-    id: Option<u16>,
 }
 
 #[allow(non_snake_case)]
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Team {
     id: u16,
     name: String,
@@ -25,7 +24,7 @@ struct Team {
     abbreviation: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 struct Teams {
     teams: Vec<Team>,
 }
