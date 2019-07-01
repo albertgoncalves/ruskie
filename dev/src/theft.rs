@@ -19,8 +19,9 @@ pub fn get_to_file(url: &str, filename: &Path, wait: u64) {
         println!("{}", url);
         if let Ok(mut response) = Client::new().get(url).send() {
             if let StatusCode::OK = response.status() {
-                let buffer = File::create(filename).map(BufWriter::new).ok();
-                buffer
+                File::create(filename)
+                    .map(BufWriter::new)
+                    .ok()
                     .and_then(|mut f| response.copy_to(&mut f).ok())
                     .void()
             }
