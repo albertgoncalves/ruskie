@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 
+if [ -z $1 ]; then
+    flag=""
+else
+    flag=$1
+fi
+
 set -eu
 
 prelude () {
     clippy
-    rustfmts
     cargo test --bin schedule
+    rustfmts
     for x in teams schedule games; do
-        cargo build --bin $x --release
+        if [ "$flag" = "debug" ]; then
+            cargo build --bin $x
+        else
+            cargo build --bin $x --release
+        fi
     done
 }
 
@@ -15,15 +25,24 @@ interlude () {
     f () {
         export START=$1
         export END=$2
-        cargo run --bin schedule --release
-        cargo run --bin games --release
+        if [ "$flag" = "debug" ]; then
+            cargo run --bin schedule
+            cargo run --bin games
+        else
+            cargo run --bin schedule --release
+            cargo run --bin games --release
+        fi
     }
 
     x="$WD/data/teams.json"
     if [ ! -f $x ]; then
         curl "https://statsapi.web.nhl.com/api/v1/teams" > $x
     fi
-    cargo run --bin teams --release
+    if [ "$flag" = "debug" ]; then
+        cargo run --bin teams
+    else
+        cargo run --bin teams --release
+    fi
     f "2017-08-01" "2018-08-01"
     f "2018-08-01" "2019-08-01"
 }

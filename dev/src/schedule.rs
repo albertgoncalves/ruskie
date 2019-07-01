@@ -13,7 +13,7 @@ use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Number;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Deserialize)]
 struct Id {
@@ -101,6 +101,7 @@ const INSERT_GAMES: &str = {
      ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
+#[inline]
 fn url(id: u32, start: &str, end: &str) -> String {
     format!(
         "https://statsapi.web.nhl.com/api/v1/schedule?\
@@ -113,6 +114,7 @@ fn url(id: u32, start: &str, end: &str) -> String {
     )
 }
 
+#[inline]
 fn scrape(
     start: &str,
     end: &str,
@@ -120,14 +122,15 @@ fn scrape(
     id: Option<u32>,
 ) -> Option<Schedule> {
     id.and_then(|id| {
-        let x: String =
+        let x: PathBuf =
             filename(&wd, "schedules", format!("{}-{}-{}", &start, &end, id));
-        println!("{}", &x);
-        get_to_file(&url(id, &start, &end), Path::new(&x), 500);
-        read_json(x)
+        let y: &Path = x.as_path();
+        get_to_file(&url(id, &start, &end), y, 500);
+        read_json(y)
     })
 }
 
+#[inline]
 fn insert(schedule: Schedule, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
         for date in schedule.dates {

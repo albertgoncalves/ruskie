@@ -3,12 +3,15 @@ use reqwest::{Client, StatusCode};
 use std::fmt::Display;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread::sleep;
 use std::time::Duration;
 
-pub fn filename<T: Display>(wd: &str, directory: &str, id: T) -> String {
-    format!("{}/data/{}/{}.json", wd, directory, id)
+#[inline]
+pub fn filename<T: Display>(wd: &str, directory: &str, id: T) -> PathBuf {
+    [format!("{}/data/{}/{}.json", wd, directory, id)]
+        .iter()
+        .collect()
 }
 
 pub fn get_to_file(url: &str, filename: &Path, wait: u64) {
@@ -16,8 +19,9 @@ pub fn get_to_file(url: &str, filename: &Path, wait: u64) {
         println!("{}", url);
         if let Ok(mut response) = Client::new().get(url).send() {
             if let StatusCode::OK = response.status() {
-                let buffer = File::create(filename).map(BufWriter::new).ok();
-                buffer
+                File::create(filename)
+                    .map(BufWriter::new)
+                    .ok()
                     .and_then(|mut f| response.copy_to(&mut f).ok())
                     .void()
             }

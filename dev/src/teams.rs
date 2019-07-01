@@ -9,6 +9,7 @@ use crate::vars::gather;
 use crate::void::ResultExt;
 use rusqlite::Connection;
 use serde::Deserialize;
+use std::path::Path;
 
 #[derive(Deserialize)]
 struct Venue {
@@ -50,7 +51,6 @@ const INSERT_TEAMS: &str = {
 fn insert(c: &mut Connection, teams: &[Team]) {
     if let Ok(t) = c.transaction() {
         for team in teams {
-            println!("{}", &team.abbreviation);
             t.execute(
                 INSERT_TEAMS,
                 &[&team.id, &team.abbreviation, &team.name, &team.venue.name],
@@ -67,7 +67,7 @@ fn main() {
             c.execute(CREATE_TEAMS, &[]).void();
             if let Some(teams) = {
                 let teams: Option<Teams> =
-                    read_json(format!("{}/data/teams.json", &wd,));
+                    read_json(Path::new(&format!("{}/data/teams.json", &wd)));
                 teams
             } {
                 insert(&mut c, &teams.teams);

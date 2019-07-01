@@ -6,43 +6,45 @@ mod void;
 use crate::sql::connect;
 use crate::theft::{filename, get_to_file};
 use crate::vars::gather;
-use std::path::Path;
+use std::path::PathBuf;
 
 const QUERY_GAME_IDS: &str = {
     "SELECT id \
      FROM games;"
 };
 
-fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> String {
-    let x: String = filename(wd, directory, id);
-    println!("{}", &x);
-    get_to_file(url, Path::new(&x), 1500);
+#[inline]
+fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> PathBuf {
+    let x: PathBuf = filename(wd, directory, id);
+    get_to_file(url, x.as_path(), 1500);
     x
 }
 
-fn scrape_both(wd: &str, id: &Option<String>) -> Option<(String, String)> {
+#[inline]
+fn events_url(id: &str) -> String {
+    format!(
+        "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live?site=en_nhl",
+        id,
+    )
+}
+
+#[inline]
+fn shifts_url(id: &str) -> String {
+    format!(
+        "http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId={}",
+        id,
+    )
+}
+
+#[inline]
+fn scrape_pair<'a>(
+    wd: &'a str,
+    id: &Option<String>,
+) -> Option<(PathBuf, PathBuf)> {
     id.as_ref().map(|id| {
         (
-            scrape(
-                wd,
-                id,
-                "events",
-                &format!(
-                    "https://statsapi.web.nhl.com/\
-                     api/v1/game/{}/feed/live?site=en_nhl",
-                    id,
-                ),
-            ),
-            scrape(
-                wd,
-                id,
-                "shifts",
-                &format!(
-                    "http://www.nhl.com/\
-                     stats/rest/shiftcharts?cayenneExp=gameId={}",
-                    id,
-                ),
-            ),
+            scrape(wd, id, "events", &events_url(id)),
+            scrape(wd, id, "shifts", &shifts_url(id)),
         )
     })
 }
@@ -56,14 +58,14 @@ fn main() {
                     id
                 })
                 .map(|ids| {
-                    let filenames: Vec<Option<(String, String)>> =
-                        ids.map(|id| (scrape_both(&wd, &id.ok()))).collect();
+                    let filenames: Vec<Option<(PathBuf, PathBuf)>> =
+                        ids.map(|id| (scrape_pair(&wd, &id.ok()))).collect();
                     filenames
                 })
             }) {
                 ids.into_iter()
-                    .map(|id| {
-                        if let Some((_, _)) = id {
+                    .map(|pair| {
+                        if let Some((_, _)) = pair {
                             //
                         }
                     })
