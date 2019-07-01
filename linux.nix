@@ -4,6 +4,7 @@ with pkgs; mkShell {
     buildInputs = [
         jq
         pkg-config
+        openssl
         rlwrap
         rustup
         sqlite
