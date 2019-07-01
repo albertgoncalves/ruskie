@@ -15,8 +15,8 @@ xs=(
     $RUSTUP_HOME
     $CARGO_HOME/bin
     $WD/data/teams
-    $WD/data/schedules
     $WD/data/games
+    $WD/data/events
     $WD/data/shifts
 )
 
