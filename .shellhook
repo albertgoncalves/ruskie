@@ -53,6 +53,3 @@ export -f rustfmts
 export -f clippy
 alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 --column --header"
-
-export START="2018-08-01"
-export END="2019-08-01"

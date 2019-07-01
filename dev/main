@@ -2,20 +2,46 @@
 
 set -eu
 
-f () {
-    printf "\nsql $1\n"
-    rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
+prelude () {
+    clippy
+    rustfmts
+    cargo test --bin schedule
+    for x in teams schedule games; do
+        cargo build --bin $x --release
+    done
 }
 
-$WD/scripts/curl_teams.sh
-cd $WD/dev
-clippy
-rustfmts
-for x in teams games events; do
-    cargo test --bin $x
-    cargo run --bin $x --release
-done
-for x in teams games; do
-    f "select count(*) from $x;"
-    f "select count(distinct id) from $x;"
-done
+interlude () {
+    f () {
+        export START=$1
+        export END=$2
+        cargo run --bin schedule --release
+        cargo run --bin games --release
+    }
+
+    $WD/scripts/curl_teams.sh
+    cargo run --bin teams --release
+    f "2017-08-01" "2018-08-01"
+    f "2018-08-01" "2019-08-01"
+}
+
+postlude () {
+    f () {
+        printf "\nsql $1\n"
+        rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
+    }
+
+    for x in teams games; do
+        f "select count(*) from $x;"
+        f "select count(distinct id) from $x;"
+    done
+}
+
+main () {
+    cd $WD/dev
+    prelude
+    interlude
+    postlude
+}
+
+main
