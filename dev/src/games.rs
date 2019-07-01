@@ -10,7 +10,9 @@ use std::path::PathBuf;
 
 const QUERY_GAME_IDS: &str = {
     "SELECT id \
-     FROM games;"
+     FROM games \
+     WHERE status_abstract = 'Final' \
+     AND status_detailed = 'Final';"
 };
 
 #[inline]
