@@ -19,7 +19,10 @@ interlude () {
         cargo run --bin games --release
     }
 
-    $WD/scripts/curl_teams.sh
+    x="$WD/data/teams.json"
+    if [ ! -f $x ]; then
+        curl "https://statsapi.web.nhl.com/api/v1/teams" > $x
+    fi
     cargo run --bin teams --release
     f "2017-08-01" "2018-08-01"
     f "2018-08-01" "2019-08-01"
