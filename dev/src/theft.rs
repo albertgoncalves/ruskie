@@ -7,6 +7,10 @@ use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
 
+pub fn filename<T: Display>(wd: &str, directory: &str, id: T) -> String {
+    format!("{}/data/{}/{}.json", wd, directory, id)
+}
+
 pub fn get_to_file(url: &str, filename: &Path, wait: u64) {
     if !filename.exists() {
         println!("{}", url);
@@ -20,14 +24,4 @@ pub fn get_to_file(url: &str, filename: &Path, wait: u64) {
         };
         sleep(Duration::from_millis(wait))
     }
-}
-
-pub fn filename<T: Display>(
-    wd: &str,
-    directory: &str,
-    id: T,
-    start: &str,
-    end: &str,
-) -> String {
-    format!("{}/data/{}/{}-{}-{}.json", wd, directory, id, start, end)
 }
