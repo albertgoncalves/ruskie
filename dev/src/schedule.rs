@@ -1,12 +1,12 @@
 mod blobs;
 mod sql;
-mod test_schedules;
+mod test_schedule;
 mod theft;
 mod vars;
 mod void;
 
 use crate::blobs::read_json;
-use crate::sql::{connect, query_ledger_id};
+use crate::sql::connect;
 use crate::theft::{filename, get_to_file};
 use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
@@ -66,17 +66,29 @@ struct Schedule {
     dates: Vec<Date>,
 }
 
-const QUERY_TEAM_IDS: &str = {
-    "SELECT t.id \
-     FROM teams t \
-     INNER JOIN ledger l ON l.id = t.ledger_id \
-     WHERE l.id = ?1;"
+const CREATE_GAMES: &str = {
+    "CREATE TABLE IF NOT EXISTS games \
+     ( id TEXT PRIMARY KEY \
+     , status_abstract TEXT NOT NULL \
+     , status_detailed TEXT NOT NULL \
+     , status_start_time_tbd BOOLEAN NOT NULL \
+     , date DATE NOT NULL \
+     , type TEXT NOT NULL \
+     , season TEXT NOT NULL \
+     , home_team_id INTEGER \
+     , away_team_id INTEGER \
+     , venue_name TEXT NOT NULL \
+     );"
 };
 
-const INSERT_SCHEDULES: &str = {
-    "INSERT INTO schedules \
+const QUERY_TEAM_IDS: &str = {
+    "SELECT t.id \
+     FROM teams t;"
+};
+
+const INSERT_GAMES: &str = {
+    "INSERT INTO games \
      ( id \
-     , ledger_id \
      , status_abstract \
      , status_detailed \
      , status_start_time_tbd \
@@ -86,7 +98,7 @@ const INSERT_SCHEDULES: &str = {
      , home_team_id \
      , away_team_id \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11);"
+     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
 fn url(id: u32, start: &str, end: &str) -> String {
@@ -108,22 +120,22 @@ fn scrape(
     id: Option<u32>,
 ) -> Option<Schedule> {
     id.and_then(|id| {
-        let x: String = filename(&wd, "schedules", id, &start, &end);
+        let x: String =
+            filename(&wd, "schedules", format!("{}-{}-{}", &start, &end, id));
         println!("{}", &x);
         get_to_file(&url(id, &start, &end), Path::new(&x), 500);
         read_json(x)
     })
 }
 
-fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
+fn insert(schedule: Schedule, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
         for date in schedule.dates {
             for game in date.games {
                 t.execute(
-                    INSERT_SCHEDULES,
+                    INSERT_GAMES,
                     &[
                         &game.gamePk.to_string(),
-                        &ledger_id,
                         &game.status.abstractGameState,
                         &game.status.detailedState,
                         &game.status.startTimeTBD,
@@ -145,32 +157,29 @@ fn insert(schedule: Schedule, ledger_id: u32, c: &mut Connection) {
 fn main() {
     if let Some((start, end, wd)) = gather() {
         if let Ok(mut c) = connect(&wd) {
-            if let Some(ledger_id) = query_ledger_id(&start, &end, &c) {
-                if let Ok(schedules) = {
-                    c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
-                        s.query_map(&[&ledger_id], |r| {
-                            let id: u32 = r.get("id");
-                            id
-                        })
-                        .map(|ids| {
-                            let schedules: Vec<Option<Schedule>> = ids
-                                .map(|id| scrape(&start, &end, &wd, id.ok()))
-                                .collect();
-                            schedules
-                        })
+            c.execute(CREATE_GAMES, &[]).void();
+            if let Ok(schedules) = {
+                c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
+                    s.query_map(&[], |r| {
+                        let id: u32 = r.get("id");
+                        id
                     })
-                } {
-                    schedules
-                        .into_iter()
-                        .map(|schedule| {
-                            schedule
-                                .map(|schedule| {
-                                    insert(schedule, ledger_id, &mut c)
-                                })
-                                .void()
-                        })
-                        .collect()
-                };
+                    .map(|ids| {
+                        let schedules: Vec<Option<Schedule>> = ids
+                            .map(|id| scrape(&start, &end, &wd, id.ok()))
+                            .collect();
+                        schedules
+                    })
+                })
+            } {
+                schedules
+                    .into_iter()
+                    .map(|schedule| {
+                        schedule
+                            .map(|schedule| insert(schedule, &mut c))
+                            .void()
+                    })
+                    .collect()
             };
         };
     };
