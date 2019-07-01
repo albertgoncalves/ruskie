@@ -45,7 +45,7 @@ const INSERT_TEAMS: &str = {
      , abbreviation \
      , name \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4);"
+     ) VALUES (?1, ?2, ?3, ?4);"
 };
 
 fn insert(c: &mut Connection, teams: &[Team]) {

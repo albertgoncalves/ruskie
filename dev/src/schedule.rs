@@ -98,7 +98,7 @@ const INSERT_GAMES: &str = {
      , home_team_id \
      , away_team_id \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
 #[inline]
