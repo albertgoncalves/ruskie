@@ -7,14 +7,15 @@ f () {
     rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
 }
 
+$WD/scripts/curl_teams.sh
 cd $WD/dev
 clippy
 rustfmts
-for x in teams schedules games; do
+for x in teams games events; do
     cargo test --bin $x
     cargo run --bin $x --release
 done
-for x in ledger teams schedules; do
+for x in teams games; do
     f "select count(*) from $x;"
     f "select count(distinct id) from $x;"
 done
