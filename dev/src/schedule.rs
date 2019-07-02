@@ -1,12 +1,11 @@
 mod blobs;
+mod scrape;
 mod sql;
-mod test_schedule;
-mod theft;
 mod void;
 
 use crate::blobs::read_json;
+use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
-use crate::theft::{filename, get_to_file};
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -66,7 +65,7 @@ struct Schedule {
 }
 
 const CREATE_GAMES: &str = {
-    "CREATE TABLE IF NOT EXISTS games \
+    "CREATE TABLE IF NOT EXISTS schedule \
      ( id TEXT PRIMARY KEY \
      , status_abstract TEXT NOT NULL \
      , status_detailed TEXT NOT NULL \
@@ -86,7 +85,7 @@ const QUERY_TEAM_IDS: &str = {
 };
 
 const INSERT_GAMES: &str = {
-    "INSERT INTO games \
+    "INSERT INTO schedule \
      ( id \
      , status_abstract \
      , status_detailed \
@@ -156,20 +155,12 @@ fn insert(schedule: Schedule, c: &mut Connection) {
     }
 }
 
-pub fn gather() -> Option<(String, String, String)> {
+fn main() {
     if let (Ok(start), Ok(end), Ok(wd)) = (
         var("START"), //
         var("END"),   //
         var("WD"),
     ) {
-        return Some((start, end, wd));
-    } else {
-        return None;
-    }
-}
-
-fn main() {
-    if let Some((start, end, wd)) = gather() {
         if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_GAMES, &[]).void();
             if let Ok(schedules) = {

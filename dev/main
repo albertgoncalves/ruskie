@@ -10,7 +10,7 @@ set -eu
 
 prelude () {
     clippy
-    cargo test --bin schedule
+    cargo test --bin teams
     rustfmts
     for x in teams schedule games; do
         if [ "$flag" = "debug" ]; then
@@ -56,7 +56,7 @@ postlude () {
         rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
     }
 
-    for x in teams games; do
+    for x in teams schedule; do
         f "select count(*) from $x;"
         f "select count(distinct id) from $x;"
     done
