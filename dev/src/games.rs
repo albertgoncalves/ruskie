@@ -1,11 +1,11 @@
 mod blobs;
+mod scrape;
 mod sql;
-mod theft;
 mod void;
 
 use crate::blobs::read_json;
+use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
-use crate::theft::{filename, get_to_file};
 use crate::void::ResultExt;
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -134,7 +134,7 @@ struct Shifts {}
 
 const QUERY_GAME_IDS: &str = {
     "SELECT id \
-     FROM games \
+     FROM schedule \
      WHERE status_abstract = 'Final' \
      AND status_detailed = 'Final' \
      AND type = 'R' \
@@ -152,7 +152,7 @@ const CREATE_PLAYERS: &str = {
      , roster_status TEXT NOT NULL \
      , position_type TEXT NOT NULL \
      , position_abbreviation TEXT NOT NULL \
-     , FOREIGN KEY (game_id) REFERENCES games(id) \
+     , FOREIGN KEY (game_id) REFERENCES schedule(id) \
      , UNIQUE(id, game_id) \
      ); "
 };
@@ -270,6 +270,7 @@ fn scrape_pair<'a>(
     })
 }
 
+#[inline]
 fn insert_player(t: &Connection, game_id: &str, team: Team) {
     for (_, player) in team.players {
         t.execute(
@@ -289,11 +290,13 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
     }
 }
 
+#[inline]
 fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
     insert_player(t, game_id, away);
     insert_player(t, game_id, home);
 }
 
+#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
         if let Some(players) = play.players {

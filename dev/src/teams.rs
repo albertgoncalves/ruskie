@@ -1,5 +1,6 @@
 mod blobs;
 mod sql;
+mod test;
 mod void;
 
 use crate::blobs::read_json;
