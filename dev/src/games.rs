@@ -138,8 +138,8 @@ const QUERY_GAME_IDS: &str = {
      WHERE status_abstract = 'Final' \
      AND status_detailed = 'Final' \
      AND type = 'R' \
-     ORDER BY DATE(date) ASC \
-     LIMIT 20;"
+     ORDER BY DATE(date) DESC \
+     LIMIT 40;"
 };
 
 const CREATE_PLAYERS: &str = {
