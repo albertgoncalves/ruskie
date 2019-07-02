@@ -214,8 +214,23 @@ const INSERT_EVENTS: &str = {
      , x \
      , y \
      ) VALUES \
-     ( ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16
-     , ?17
+     ( ?1 \
+     , ?2 \
+     , ?3 \
+     , ?4 \
+     , ?5 \
+     , ?6 \
+     , ?7 \
+     , ?8 \
+     , ?9 \
+     , ?10 \
+     , ?11 \
+     , ?12 \
+     , ?13 \
+     , ?14 \
+     , ?15 \
+     , ?16 \
+     , ?17 \
      );"
 };
 
@@ -256,7 +271,7 @@ fn scrape_pair<'a>(
 }
 
 fn insert_player(t: &Connection, game_id: &str, team: Team) {
-    for (_, player) in team.players.into_iter() {
+    for (_, player) in team.players {
         t.execute(
             INSERT_PLAYERS,
             &[
