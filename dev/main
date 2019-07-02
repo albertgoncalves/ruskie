@@ -27,10 +27,8 @@ interlude () {
         export END=$2
         if [ "$flag" = "debug" ]; then
             cargo run --bin schedule
-            cargo run --bin games
         else
             cargo run --bin schedule --release
-            cargo run --bin games --release
         fi
     }
 
@@ -45,6 +43,11 @@ interlude () {
     fi
     f "2017-08-01" "2018-08-01"
     f "2018-08-01" "2019-08-01"
+    if [ "$flag" = "debug" ]; then
+        cargo run --bin games
+    else
+        cargo run --bin games --release
+    fi
 }
 
 postlude () {
@@ -57,6 +60,11 @@ postlude () {
         f "select count(*) from $x;"
         f "select count(distinct id) from $x;"
     done
+    for x in players events; do
+        f "select count(distinct game_id) from $x;"
+    done
+    f "select count(distinct id) from players where roster_status = 'Y';"
+    f "select count(distinct player_id) from events;"
 }
 
 main () {
