@@ -121,7 +121,7 @@ fn scrape(
 ) -> Option<Schedule> {
     id.and_then(|id| {
         let x: PathBuf =
-            filename(&wd, "schedules", format!("{}-{}-{}", &start, &end, id));
+            filename(&wd, "schedule", format!("{}-{}-{}", &start, &end, id));
         let y: &Path = x.as_path();
         get_to_file(&url(id, &start, &end), y, 500);
         read_json(y)
