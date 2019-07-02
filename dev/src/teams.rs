@@ -1,14 +1,13 @@
 mod blobs;
 mod sql;
-mod vars;
 mod void;
 
 use crate::blobs::read_json;
 use crate::sql::connect;
-use crate::vars::gather;
 use crate::void::ResultExt;
 use rusqlite::Connection;
 use serde::Deserialize;
+use std::env::var;
 use std::path::Path;
 
 #[derive(Deserialize)]
@@ -45,7 +44,7 @@ const INSERT_TEAMS: &str = {
      , abbreviation \
      , name \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4);"
+     ) VALUES (?1, ?2, ?3, ?4);"
 };
 
 fn insert(c: &mut Connection, teams: &[Team]) {
@@ -62,7 +61,7 @@ fn insert(c: &mut Connection, teams: &[Team]) {
 }
 
 fn main() {
-    if let Some((_, _, wd)) = gather() {
+    if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_TEAMS, &[]).void();
             if let Some(teams) = {

@@ -2,17 +2,16 @@ mod blobs;
 mod sql;
 mod test_schedule;
 mod theft;
-mod vars;
 mod void;
 
 use crate::blobs::read_json;
 use crate::sql::connect;
 use crate::theft::{filename, get_to_file};
-use crate::vars::gather;
 use crate::void::{OptionExt, ResultExt};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Number;
+use std::env::var;
 use std::path::{Path, PathBuf};
 
 #[derive(Deserialize)]
@@ -98,7 +97,7 @@ const INSERT_GAMES: &str = {
      , home_team_id \
      , away_team_id \
      , venue_name \
-     ) values (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
 #[inline]
@@ -154,6 +153,18 @@ fn insert(schedule: Schedule, c: &mut Connection) {
             }
         }
         t.commit().void()
+    }
+}
+
+pub fn gather() -> Option<(String, String, String)> {
+    if let (Ok(start), Ok(end), Ok(wd)) = (
+        var("START"), //
+        var("END"),   //
+        var("WD"),
+    ) {
+        return Some((start, end, wd));
+    } else {
+        return None;
     }
 }
 
