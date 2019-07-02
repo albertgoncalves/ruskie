@@ -15,7 +15,7 @@ use std::env::var;
 use std::path::PathBuf;
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Result {
     event: String,
     secondaryType: Option<String>,
@@ -23,20 +23,20 @@ struct Result {
     penaltyMinutes: Option<u8>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Copy, Clone)]
 struct Coordinates {
-    x: Option<Number>,
-    y: Option<Number>,
+    x: Option<f64>,
+    y: Option<f64>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Goals {
     away: u8,
     home: u8,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct About {
     eventId: u16,
     period: u8,
@@ -46,19 +46,19 @@ struct About {
     goals: Goals,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct PlayerId {
     id: Number,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Participant {
     player: PlayerId,
     playerType: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Copy, Clone)]
 struct TeamId {
     id: u16,
 }
@@ -84,7 +84,7 @@ struct Player {
     position: Position,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Event {
     result: Result,
     about: About,
@@ -94,7 +94,7 @@ struct Event {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Plays {
     allPlays: Vec<Event>,
 }
@@ -111,19 +111,19 @@ struct Teams {
     away: Team,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Boxscore {
     teams: Teams,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct LiveData {
     plays: Plays,
     boxscore: Boxscore,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Events {
     gamePk: Number,
     liveData: LiveData,
@@ -300,33 +300,42 @@ fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
         if let Some(players) = play.players {
+            let team_id: Option<u16> = play.team.map(|t| t.id);
+            let event_id: u16 = play.about.eventId;
+            let event: String = play.result.event;
+            let secondary_type: Option<String> = play.result.secondaryType;
+            let penality_severity: Option<String> =
+                play.result.penaltySeverity;
+            let penality_minutes: Option<u8> = play.result.penaltyMinutes;
+            let period: u8 = play.about.period;
+            let period_type: String = play.about.periodType;
+            let period_time: String = play.about.periodTime;
+            let period_time_remaining: String = play.about.periodTimeRemaining;
+            let goals_away: u8 = play.about.goals.away;
+            let goals_home: u8 = play.about.goals.home;
+            let x: Option<f64> = play.coordinates.and_then(|c| c.x);
+            let y: Option<f64> = play.coordinates.and_then(|c| c.y);
             for player in players {
                 t.execute(
                     INSERT_EVENTS,
                     &[
                         &game_id,
-                        &play.team.clone().map(|t| t.id),
+                        &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
-                        &play.about.eventId,
-                        &play.result.event,
-                        &play.result.secondaryType,
-                        &play.result.penaltySeverity,
-                        &play.result.penaltyMinutes,
-                        &play.about.period,
-                        &play.about.periodType,
-                        &play.about.periodTime,
-                        &play.about.periodTimeRemaining,
-                        &play.about.goals.away,
-                        &play.about.goals.home,
-                        &play
-                            .coordinates
-                            .clone()
-                            .and_then(|c| c.x.and_then(|x| x.as_f64())),
-                        &play
-                            .coordinates
-                            .clone()
-                            .and_then(|c| c.y.and_then(|y| y.as_f64())),
+                        &event_id,
+                        &event,
+                        &secondary_type,
+                        &penality_severity,
+                        &penality_minutes,
+                        &period,
+                        &period_type,
+                        &period_time,
+                        &period_time_remaining,
+                        &goals_away,
+                        &goals_home,
+                        &x,
+                        &y,
                     ],
                 )
                 .void()
@@ -365,10 +374,18 @@ fn main() {
                                 // (events, shifts)
                                 (events, Some(()))
                             } {
-                                let teams: Teams =
-                                    events.liveData.boxscore.teams.clone();
-                                let away: Team = teams.away.clone();
-                                let home: Team = teams.home;
+                                let away: Team = events
+                                    .liveData
+                                    .boxscore
+                                    .teams
+                                    .away
+                                    .clone();
+                                let home: Team = events
+                                    .liveData
+                                    .boxscore
+                                    .teams
+                                    .home
+                                    .clone();
                                 let game_id: String =
                                     events.gamePk.to_string();
                                 println!("{}", &game_id);
