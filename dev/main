@@ -10,7 +10,7 @@ set -eu
 
 prelude () {
     clippy
-    cargo test --bin teams
+    cargo test --bin games
     rustfmts
     for x in teams schedule games; do
         if [ "$flag" = "debug" ]; then

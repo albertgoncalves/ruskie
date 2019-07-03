@@ -1,6 +1,7 @@
 #[allow(non_snake_case)]
 #[cfg(test)]
 mod test {
+    use crate::parse_time;
     use serde::Deserialize;
     use serde_json::Number;
 
@@ -28,5 +29,25 @@ mod test {
     fn gamePk_string() {
         let json: Game = serde_json::from_str(INPUT).unwrap();
         assert_eq!(json.gamePk.to_string(), N.to_string())
+    }
+
+    #[test]
+    fn parse_time_start() {
+        assert_eq!(parse_time("00:00"), Some(0))
+    }
+
+    #[test]
+    fn parse_time_mid() {
+        assert_eq!(parse_time("10:05"), Some(605))
+    }
+
+    #[test]
+    fn parse_time_end() {
+        assert_eq!(parse_time("20:00"), Some(1200))
+    }
+
+    #[test]
+    fn parse_time_none() {
+        assert_eq!(parse_time("1000"), None)
     }
 }

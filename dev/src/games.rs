@@ -1,6 +1,7 @@
 mod blobs;
 mod scrape;
 mod sql;
+mod test;
 mod void;
 
 use crate::blobs::read_json;
@@ -297,6 +298,19 @@ fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
 }
 
 #[inline]
+fn parse_time(t: &str) -> Option<u16> {
+    if let [minutes, seconds] = t.split(':').collect::<Vec<&str>>().as_slice()
+    {
+        return minutes
+            .parse::<u16>()
+            .and_then(|m| seconds.parse::<u16>().map(|s| (m * 60) + s))
+            .ok();
+    } else {
+        return None;
+    }
+}
+
+#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
         if let Some(players) = play.players {
@@ -309,8 +323,9 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
             let penality_minutes: Option<u8> = play.result.penaltyMinutes;
             let period: u8 = play.about.period;
             let period_type: String = play.about.periodType;
-            let period_time: String = play.about.periodTime;
-            let period_time_remaining: String = play.about.periodTimeRemaining;
+            let period_time: Option<u16> = parse_time(&play.about.periodTime);
+            let period_time_remaining: Option<u16> =
+                parse_time(&play.about.periodTimeRemaining);
             let goals_away: u8 = play.about.goals.away;
             let goals_home: u8 = play.about.goals.home;
             let x: Option<f64> = play.coordinates.and_then(|c| c.x);
