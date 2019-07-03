@@ -459,14 +459,23 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            c.execute(CREATE_PLAYERS, &[]).void();
-            c.execute(INDEX_PLAYERS_GAME_ID, &[]).void();
-            c.execute(INDEX_PLAYERS_TEAM_ID, &[]).void();
-            c.execute(CREATE_EVENTS, &[]).void();
-            c.execute(INDEX_EVENTS_GAME_ID, &[]).void();
-            c.execute(INDEX_EVENTS_TEAM_ID, &[]).void();
-            c.execute(INDEX_EVENTS_PLAYER_ID, &[]).void();
-            c.execute(INDEX_EVENTS_EVENT, &[]).void();
+            let xs: [&str; 12] = [
+                CREATE_PLAYERS,
+                INDEX_PLAYERS_GAME_ID,
+                INDEX_PLAYERS_TEAM_ID,
+                CREATE_EVENTS,
+                INDEX_EVENTS_GAME_ID,
+                INDEX_EVENTS_TEAM_ID,
+                INDEX_EVENTS_PLAYER_ID,
+                INDEX_EVENTS_EVENT,
+                CREATE_SHIFTS,
+                INDEX_SHIFTS_GAME_ID,
+                INDEX_SHIFTS_TEAM_ID,
+                INDEX_SHIFTS_PLAYER_ID,
+            ];
+            for x in &xs {
+                c.execute(x, &[]).void();
+            }
             if let Ok(ids) = c.prepare(QUERY_GAME_IDS).and_then(|mut s| {
                 s.query_map(&[], |r| {
                     let id: String = r.get("id");
