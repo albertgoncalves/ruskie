@@ -476,9 +476,8 @@ fn main() {
                     id
                 })
                 .map(|ids| {
-                    let filenames: Vec<Option<(PathBuf, PathBuf)>> =
-                        ids.map(|id| (scrape_pair(&wd, &id.ok()))).collect();
-                    filenames
+                    ids.map(|id| (scrape_pair(&wd, &id.ok())))
+                        .collect::<Vec<Option<(PathBuf, PathBuf)>>>()
                 })
             }) {
                 let pairs: Vec<Option<(Events, Shifts)>> = ids
@@ -496,11 +495,11 @@ fn main() {
                 if let Ok(t) = c.transaction() {
                     for pair in pairs {
                         if let Some((events, shifts)) = pair {
+                            let game_id: String = events.gamePk.to_string();
                             let away: Team =
                                 events.liveData.boxscore.teams.away.clone();
                             let home: Team =
                                 events.liveData.boxscore.teams.home.clone();
-                            let game_id: String = events.gamePk.to_string();
                             insert_players(&t, &game_id, away, home);
                             insert_events(&t, &game_id, events);
                             insert_shifts(&t, shifts)

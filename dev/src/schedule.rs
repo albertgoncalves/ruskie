@@ -178,18 +178,15 @@ fn main() {
                         id
                     })
                     .map(|ids| {
-                        let schedules: Vec<Option<PathBuf>> = ids
-                            .map(|id| scrape(&start, &end, &wd, id.ok()))
-                            .collect();
-                        schedules
+                        ids.map(|id| scrape(&start, &end, &wd, id.ok()))
+                            .collect::<Vec<Option<PathBuf>>>()
                     })
                 })
             } {
-                let schedules: Vec<Option<Schedule>> = schedules
+                schedules
                     .par_iter()
                     .map(|s| s.as_ref().and_then(|s| read_json(s.as_path())))
-                    .collect();
-                schedules
+                    .collect::<Vec<Option<Schedule>>>()
                     .into_iter()
                     .map(|schedule| {
                         schedule
