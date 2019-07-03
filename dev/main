@@ -13,9 +13,9 @@ prelude () {
     cargo test -q --bin games
     rustfmts
     if [ "$flag" = "debug" ]; then
-        cargo build --bin
+        cargo build
     else
-        cargo build --bin --release
+        cargo build --release
     fi
 }
 
