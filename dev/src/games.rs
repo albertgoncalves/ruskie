@@ -201,8 +201,8 @@ const CREATE_EVENTS: &str = {
      , player_type TEXT NOT NULL \
      , event TEXT NOT NULL \
      , secondary_type TEXT \
-     , penality_severity TEXT \
-     , penality_minutes INTEGER \
+     , penalty_severity TEXT \
+     , penalty_minutes INTEGER \
      , period INTEGER NOT NULL \
      , period_type TEXT NOT NULL \
      , period_time INTEGER NOT NULL \
@@ -226,7 +226,13 @@ const INDEX_EVENTS_PLAYER_ID: &str =
     "CREATE INDEX index_events_player_id ON events(player_id);";
 
 const INDEX_EVENTS_EVENT: &str =
-    "CREATE INDEX index_events_event ON events(event);";
+    "CREATE INDEX index_events_event ON events(event, player_type);";
+
+const INDEX_EVENTS_PENALTY_SEVERITY: &str =
+    "CREATE INDEX index_events_penalty_severity ON events(penalty_severity);";
+
+const INDEX_EVENTS_PERIOD_TIME: &str =
+    "CREATE INDEX index_events_period_time ON events(period, period_time);";
 
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
@@ -237,8 +243,8 @@ const INSERT_EVENTS: &str = {
      , player_type \
      , event \
      , secondary_type \
-     , penality_severity \
-     , penality_minutes \
+     , penalty_severity \
+     , penalty_minutes \
      , period \
      , period_type \
      , period_time \
@@ -381,9 +387,8 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
             let team_id: Option<u16> = play.team.map(|t| t.id);
             let event: String = play.result.event;
             let secondary_type: Option<String> = play.result.secondaryType;
-            let penality_severity: Option<String> =
-                play.result.penaltySeverity;
-            let penality_minutes: Option<u8> = play.result.penaltyMinutes;
+            let penalty_severity: Option<String> = play.result.penaltySeverity;
+            let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
             let period: u8 = play.about.period;
             let period_type: String = play.about.periodType;
             let goals_away: u8 = play.about.goals.away;
@@ -401,8 +406,8 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
                         &player.playerType,
                         &event,
                         &secondary_type,
-                        &penality_severity,
-                        &penality_minutes,
+                        &penalty_severity,
+                        &penalty_minutes,
                         &period,
                         &period_type,
                         &period_time,
@@ -446,7 +451,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            let xs: [&str; 12] = [
+            let xs: [&str; 14] = [
                 CREATE_PLAYERS,
                 INDEX_PLAYERS_GAME_ID,
                 INDEX_PLAYERS_TEAM_ID,
@@ -455,6 +460,8 @@ fn main() {
                 INDEX_EVENTS_TEAM_ID,
                 INDEX_EVENTS_PLAYER_ID,
                 INDEX_EVENTS_EVENT,
+                INDEX_EVENTS_PENALTY_SEVERITY,
+                INDEX_EVENTS_PERIOD_TIME,
                 CREATE_SHIFTS,
                 INDEX_SHIFTS_GAME_ID,
                 INDEX_SHIFTS_TEAM_ID,
