@@ -130,8 +130,24 @@ struct Events {
     liveData: LiveData,
 }
 
+#[allow(non_snake_case)]
 #[derive(Deserialize)]
-struct Shifts {}
+struct Shift {
+    gameId: Number,
+    teamId: u16,
+    playerId: Number,
+    period: u8,
+    startTime: String,
+    endTime: String,
+    duration: Option<String>,
+    shiftNumber: u8,
+    eventDescription: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct Shifts {
+    data: Vec<Shift>,
+}
 
 const QUERY_GAME_IDS: &str = {
     "SELECT id \
@@ -251,6 +267,45 @@ const INSERT_EVENTS: &str = {
      , ?17 \
      );"
 };
+
+const CREATE_SHIFTS: &str = {
+    "CREATE TABLE IF NOT EXISTS shifts \
+     ( game_id TEXT \
+     , team_id INTEGER NOT NULL \
+     , player_id TEXT NOT NULL \
+     , period INTEGER NOT NULL \
+     , start_time INTEGER \
+     , end_time INTEGER \
+     , duration INTEGER \
+     , shift_number INTEGER NOT NULL \
+     , event TEXT \
+     , FOREIGN KEY (game_id) REFERENCES schedule(id) \
+     , UNIQUE(game_id, player_id, period, start_time, end_time, shift_number) \
+     );"
+};
+
+const INSERT_SHIFTS: &str = {
+    "INSERT INTO shifts \
+     ( game_id \
+     , team_id \
+     , player_id \
+     , period \
+     , start_time \
+     , end_time \
+     , duration \
+     , shift_number \
+     , event \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
+};
+
+const INDEX_SHIFTS_GAME_ID: &str =
+    "CREATE INDEX index_shifts_game_id ON shifts(game_id);";
+
+const INDEX_SHIFTS_TEAM_ID: &str =
+    "CREATE INDEX index_shifts_team_id ON shifts(team_id);";
+
+const INDEX_SHIFTS_PLAYER_ID: &str =
+    "CREATE INDEX index_shifts_player_id ON shifts(player_id);";
 
 #[inline]
 fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> PathBuf {
@@ -403,14 +458,13 @@ fn main() {
             }) {
                 if let Ok(t) = c.transaction() {
                     for pair in ids {
-                        if let Some((events, _shifts)) = pair {
-                            if let (Some(events), Some(_)) = {
+                        if let Some((events, shifts)) = pair {
+                            if let (Some(events), Some(shifts)) = {
                                 let events: Option<Events> =
                                     read_json(events.as_path());
-                                // let shifts: Option<Shifts> =
-                                //     read_json(shifts.as_path());
-                                // (events, shifts)
-                                (events, Some(()))
+                                let shifts: Option<Shifts> =
+                                    read_json(shifts.as_path());
+                                (events, shifts)
                             } {
                                 let away: Team = events
                                     .liveData
@@ -426,10 +480,9 @@ fn main() {
                                     .clone();
                                 let game_id: String =
                                     events.gamePk.to_string();
-                                println!("{}", &game_id);
                                 insert_players(&t, &game_id, away, home);
                                 insert_events(&t, &game_id, events);
-                                // insert_shifts(&t, shifts)
+                                insert_shifts(&t, shifts)
                             }
                         }
                     }
