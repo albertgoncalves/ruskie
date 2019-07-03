@@ -179,10 +179,10 @@ const CREATE_PLAYERS: &str = {
 };
 
 const INDEX_PLAYERS_GAME_ID: &str =
-    "CREATE INDEX index_game_id ON players(game_id);";
+    "CREATE INDEX index_players_game_id ON players(game_id);";
 
 const INDEX_PLAYERS_TEAM_ID: &str =
-    "CREATE INDEX index_team_id ON players(team_id);";
+    "CREATE INDEX index_players_team_id ON players(team_id);";
 
 const INSERT_PLAYERS: &str = {
     "INSERT INTO players \
@@ -222,15 +222,16 @@ const CREATE_EVENTS: &str = {
 };
 
 const INDEX_EVENTS_GAME_ID: &str =
-    "CREATE INDEX index_game_id ON events(game_id);";
+    "CREATE INDEX index_events_game_id ON events(game_id);";
 
 const INDEX_EVENTS_TEAM_ID: &str =
-    "CREATE INDEX index_team_id ON events(team_id);";
+    "CREATE INDEX index_events_team_id ON events(team_id);";
 
 const INDEX_EVENTS_PLAYER_ID: &str =
-    "CREATE INDEX index_player_id ON events(player_id);";
+    "CREATE INDEX index_events_player_id ON events(player_id);";
 
-const INDEX_EVENTS_EVENT: &str = "CREATE INDEX index_event ON events(event);";
+const INDEX_EVENTS_EVENT: &str =
+    "CREATE INDEX index_events_event ON events(event);";
 
 const INSERT_EVENTS: &str = {
     "INSERT INTO events

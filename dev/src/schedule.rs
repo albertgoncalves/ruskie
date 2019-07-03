@@ -80,10 +80,10 @@ const CREATE_GAMES: &str = {
 };
 
 const INDEX_HOME_TEAM_ID: &str =
-    "CREATE INDEX index_home_team_id ON schedule(home_team_id);";
+    "CREATE INDEX index_schedule_home_team_id ON schedule(home_team_id);";
 
 const INDEX_AWAY_TEAM_ID: &str =
-    "CREATE INDEX index_away_team_id ON schedule(away_team_id);";
+    "CREATE INDEX index_schedule_away_team_id ON schedule(away_team_id);";
 
 const QUERY_TEAM_IDS: &str = {
     "SELECT t.id \
