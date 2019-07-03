@@ -76,7 +76,6 @@ struct Person {
 
 #[derive(Deserialize, Clone)]
 struct Position {
-    r#type: String,
     abbreviation: String,
 }
 
@@ -166,8 +165,7 @@ const CREATE_PLAYERS: &str = {
      , full_name TEXT NOT NULL \
      , shoots_catches TEXT \
      , roster_status TEXT NOT NULL \
-     , position_type TEXT NOT NULL \
-     , position_abbreviation TEXT NOT NULL \
+     , position TEXT NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
      , UNIQUE(id, game_id) \
      );"
@@ -187,9 +185,8 @@ const INSERT_PLAYERS: &str = {
      , full_name \
      , shoots_catches \
      , roster_status \
-     , position_type \
-     , position_abbreviation \
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);"
+     , position \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);"
 };
 
 const CREATE_EVENTS: &str = {
@@ -341,7 +338,6 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
                 &player.person.fullName,
                 &player.person.shootsCatches,
                 &player.person.rosterStatus,
-                &player.position.r#type,
                 &player.position.abbreviation,
             ],
         )
