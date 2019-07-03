@@ -231,9 +231,6 @@ const INDEX_EVENTS_EVENT: &str =
 const INDEX_EVENTS_PENALTY_SEVERITY: &str =
     "CREATE INDEX index_events_penalty_severity ON events(penalty_severity);";
 
-const INDEX_EVENTS_PERIOD_TIME: &str =
-    "CREATE INDEX index_events_period_time ON events(period, period_time);";
-
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
      ( id \
@@ -451,7 +448,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            let xs: [&str; 14] = [
+            let xs: [&str; 13] = [
                 CREATE_PLAYERS,
                 INDEX_PLAYERS_GAME_ID,
                 INDEX_PLAYERS_TEAM_ID,
@@ -461,7 +458,6 @@ fn main() {
                 INDEX_EVENTS_PLAYER_ID,
                 INDEX_EVENTS_EVENT,
                 INDEX_EVENTS_PENALTY_SEVERITY,
-                INDEX_EVENTS_PERIOD_TIME,
                 CREATE_SHIFTS,
                 INDEX_SHIFTS_GAME_ID,
                 INDEX_SHIFTS_TEAM_ID,
