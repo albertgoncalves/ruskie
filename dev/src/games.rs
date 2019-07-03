@@ -436,8 +436,25 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
     }
 }
 
-// fn insert_shifts(_t: &Connection, _shifts: Shifts) {
-// }
+fn insert_shifts(t: &Connection, shifts: Shifts) {
+    for shift in shifts.data {
+        t.execute(
+            INSERT_SHIFTS,
+            &[
+                &shift.gameId.to_string(),
+                &shift.teamId,
+                &shift.playerId.to_string(),
+                &shift.period,
+                &parse_time(&shift.startTime),
+                &parse_time(&shift.endTime),
+                &shift.duration.map(|d| parse_time(&d)),
+                &shift.shiftNumber,
+                &shift.eventDescription,
+            ],
+        )
+        .void()
+    }
+}
 
 fn main() {
     if let Ok(wd) = var("WD") {
