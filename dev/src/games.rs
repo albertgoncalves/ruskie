@@ -199,7 +199,7 @@ const CREATE_EVENTS: &str = {
      ( id INTEGER NOT NULL \
      , game_id TEXT \
      , team_id TEXT NOT NULL \
-     , player_id TEXT \
+     , player_id TEXT NOT NULL \
      , player_type TEXT NOT NULL \
      , event TEXT NOT NULL \
      , secondary_type TEXT \
@@ -207,8 +207,8 @@ const CREATE_EVENTS: &str = {
      , penality_minutes INTEGER \
      , period INTEGER NOT NULL \
      , period_type TEXT NOT NULL \
-     , period_time INTEGER \
-     , period_time_remaining INTEGER \
+     , period_time INTEGER NOT NULL \
+     , period_time_remaining INTEGER NOT NULL \
      , away_score INTEGER NOT NULL \
      , home_score INTEGER NOT NULL \
      , x REAL \
@@ -390,7 +390,15 @@ fn parse_time(t: &str) -> Option<u16> {
 #[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
-        if let Some(players) = play.players {
+        if let (
+            Some(players),
+            Some(period_time),
+            Some(period_time_remaining),
+        ) = (
+            play.players,
+            parse_time(&play.about.periodTime),
+            parse_time(&play.about.periodTimeRemaining),
+        ) {
             let event_id: u16 = play.about.eventId;
             let team_id: Option<u16> = play.team.map(|t| t.id);
             let event: String = play.result.event;
@@ -400,9 +408,6 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
             let penality_minutes: Option<u8> = play.result.penaltyMinutes;
             let period: u8 = play.about.period;
             let period_type: String = play.about.periodType;
-            let period_time: Option<u16> = parse_time(&play.about.periodTime);
-            let period_time_remaining: Option<u16> =
-                parse_time(&play.about.periodTimeRemaining);
             let goals_away: u8 = play.about.goals.away;
             let goals_home: u8 = play.about.goals.home;
             let x: Option<f64> = play.coordinates.and_then(|c| c.x);
