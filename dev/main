@@ -10,15 +10,13 @@ set -eu
 
 prelude () {
     clippy
-    cargo test --bin games
+    cargo test -q --bin games
     rustfmts
-    for x in teams schedule games; do
-        if [ "$flag" = "debug" ]; then
-            cargo build --bin $x
-        else
-            cargo build --bin $x --release
-        fi
-    done
+    if [ "$flag" = "debug" ]; then
+        cargo build --bin
+    else
+        cargo build --bin --release
+    fi
 }
 
 interlude () {
@@ -56,7 +54,7 @@ postlude () {
         rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
     }
 
-    for x in teams schedule; do
+    for x in teams schedule players; do
         f "SELECT COUNT(*) FROM $x;"
         f "SELECT COUNT(DISTINCT id) FROM $x;"
     done
@@ -64,7 +62,6 @@ postlude () {
         f "SELECT COUNT(*) FROM $x"
         f "SELECT COUNT(DISTINCT game_id) FROM $x;"
     done
-    f "SELECT COUNT(DISTINCT id) FROM players WHERE roster_status = 'Y';"
     for x in events shifts; do
         f "SELECT COUNT(DISTINCT player_id) FROM $x;"
     done
