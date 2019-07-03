@@ -1,6 +1,7 @@
 mod blobs;
 mod scrape;
 mod sql;
+mod test;
 mod void;
 
 use crate::blobs::read_json;
@@ -15,7 +16,7 @@ use std::env::var;
 use std::path::PathBuf;
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Result {
     event: String,
     secondaryType: Option<String>,
@@ -23,20 +24,20 @@ struct Result {
     penaltyMinutes: Option<u8>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Copy, Clone)]
 struct Coordinates {
-    x: Option<Number>,
-    y: Option<Number>,
+    x: Option<f64>,
+    y: Option<f64>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Goals {
     away: u8,
     home: u8,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct About {
     eventId: u16,
     period: u8,
@@ -46,19 +47,19 @@ struct About {
     goals: Goals,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct PlayerId {
     id: Number,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Participant {
     player: PlayerId,
     playerType: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Copy, Clone)]
 struct TeamId {
     id: u16,
 }
@@ -84,7 +85,7 @@ struct Player {
     position: Position,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Event {
     result: Result,
     about: About,
@@ -94,7 +95,7 @@ struct Event {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Plays {
     allPlays: Vec<Event>,
 }
@@ -111,42 +112,59 @@ struct Teams {
     away: Team,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Boxscore {
     teams: Teams,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct LiveData {
     plays: Plays,
     boxscore: Boxscore,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Events {
     gamePk: Number,
     liveData: LiveData,
 }
 
+#[allow(non_snake_case)]
 #[derive(Deserialize)]
-struct Shifts {}
+struct Shift {
+    gameId: Number,
+    teamId: u16,
+    playerId: Number,
+    period: u8,
+    startTime: String,
+    endTime: String,
+    duration: Option<String>,
+    shiftNumber: u8,
+    eventDescription: Option<String>,
+    eventNumber: Option<u16>,
+}
+
+#[derive(Deserialize)]
+struct Shifts {
+    data: Vec<Shift>,
+}
 
 const QUERY_GAME_IDS: &str = {
     "SELECT id \
      FROM schedule \
-     WHERE status_abstract = 'Final' \
+     WHERE type IN ('R', 'P') \
+     AND status_abstract = 'Final' \
      AND status_detailed = 'Final' \
-     AND type = 'R' \
-     ORDER BY DATE(date) ASC \
+     ORDER BY DATE(date) DESC \
      LIMIT 20;"
 };
 
 const CREATE_PLAYERS: &str = {
     "CREATE TABLE IF NOT EXISTS players \
-     ( game_id TEXT \
+     ( id TEXT NOT NULL \
+     , game_id TEXT \
      , team_id INTEGER NOT NULL \
-     , id TEXT NOT NULL \
      , full_name TEXT NOT NULL \
      , shoots_catches TEXT \
      , roster_status TEXT NOT NULL \
@@ -154,14 +172,20 @@ const CREATE_PLAYERS: &str = {
      , position_abbreviation TEXT NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
      , UNIQUE(id, game_id) \
-     ); "
+     );"
 };
+
+const INDEX_PLAYERS_GAME_ID: &str =
+    "CREATE INDEX index_players_game_id ON players(game_id);";
+
+const INDEX_PLAYERS_TEAM_ID: &str =
+    "CREATE INDEX index_players_team_id ON players(team_id);";
 
 const INSERT_PLAYERS: &str = {
     "INSERT INTO players \
-     ( game_id \
+     ( id \
+     , game_id \
      , team_id \
-     , id \
      , full_name \
      , shoots_catches \
      , roster_status \
@@ -172,35 +196,47 @@ const INSERT_PLAYERS: &str = {
 
 const CREATE_EVENTS: &str = {
     "CREATE TABLE IF NOT EXISTS events \
-     ( game_id TEXT \
+     ( id INTEGER NOT NULL \
+     , game_id TEXT \
      , team_id TEXT NOT NULL \
-     , player_id TEXT \
+     , player_id TEXT NOT NULL \
      , player_type TEXT NOT NULL \
-     , id INTEGER NOT NULL \
      , event TEXT NOT NULL \
      , secondary_type TEXT \
      , penality_severity TEXT \
      , penality_minutes INTEGER \
      , period INTEGER NOT NULL \
      , period_type TEXT NOT NULL \
-     , period_time TEXT NOT NULL \
-     , period_time_remaining TEXT NOT NULL \
+     , period_time INTEGER NOT NULL \
+     , period_time_remaining INTEGER NOT NULL \
      , away_score INTEGER NOT NULL \
      , home_score INTEGER NOT NULL \
      , x REAL \
      , y REAL \
-     , FOREIGN KEY (player_id, game_id) REFERENCES players(id, game_id) \
-     , UNIQUE(game_id, player_id, id) \
-     ); "
+     , FOREIGN KEY (game_id) REFERENCES schedule(id) \
+     , UNIQUE(id, game_id, player_id) \
+     );"
 };
+
+const INDEX_EVENTS_GAME_ID: &str =
+    "CREATE INDEX index_events_game_id ON events(game_id);";
+
+const INDEX_EVENTS_TEAM_ID: &str =
+    "CREATE INDEX index_events_team_id ON events(team_id);";
+
+const INDEX_EVENTS_PLAYER_ID: &str =
+    "CREATE INDEX index_events_player_id ON events(player_id);";
+
+const INDEX_EVENTS_EVENT: &str =
+    "CREATE INDEX index_events_event ON events(event);";
 
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
-     ( game_id \
+     ( id \
+     , game_id \
      , team_id \
      , player_id \
      , player_type \
-     , id \
      , event \
      , secondary_type \
      , penality_severity \
@@ -213,26 +249,51 @@ const INSERT_EVENTS: &str = {
      , home_score \
      , x \
      , y \
-     ) VALUES \
-     ( ?1 \
-     , ?2 \
-     , ?3 \
-     , ?4 \
-     , ?5 \
-     , ?6 \
-     , ?7 \
-     , ?8 \
-     , ?9 \
-     , ?10 \
-     , ?11 \
-     , ?12 \
-     , ?13 \
-     , ?14 \
-     , ?15 \
-     , ?16 \
-     , ?17 \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14 \
+     , ?15, ?16, ?17);"
+};
+
+const CREATE_SHIFTS: &str = {
+    "CREATE TABLE IF NOT EXISTS shifts \
+     ( game_id TEXT \
+     , team_id INTEGER NOT NULL \
+     , player_id TEXT NOT NULL \
+     , period INTEGER NOT NULL \
+     , start_time INTEGER NOT NULL \
+     , end_time INTEGER NOT NULL \
+     , duration INTEGER \
+     , shift_number INTEGER NOT NULL \
+     , event TEXT NOT NULL \
+     , event_number INTEGER NOT NULL \
+     , FOREIGN KEY (game_id) REFERENCES schedule(id) \
+     , UNIQUE(game_id, player_id, period, start_time, end_time, event \
+     , event_number) \
      );"
 };
+
+const INSERT_SHIFTS: &str = {
+    "INSERT INTO shifts \
+     ( game_id \
+     , team_id \
+     , player_id \
+     , period \
+     , start_time \
+     , end_time \
+     , duration \
+     , shift_number \
+     , event \
+     , event_number \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
+};
+
+const INDEX_SHIFTS_GAME_ID: &str =
+    "CREATE INDEX index_shifts_game_id ON shifts(game_id);";
+
+const INDEX_SHIFTS_TEAM_ID: &str =
+    "CREATE INDEX index_shifts_team_id ON shifts(team_id);";
+
+const INDEX_SHIFTS_PLAYER_ID: &str =
+    "CREATE INDEX index_shifts_player_id ON shifts(player_id);";
 
 #[inline]
 fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> PathBuf {
@@ -276,9 +337,9 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
         t.execute(
             INSERT_PLAYERS,
             &[
+                &player.person.id.to_string(),
                 &game_id,
                 &team.team.id,
-                &player.person.id.to_string(),
                 &player.person.fullName,
                 &player.person.shootsCatches,
                 &player.person.rosterStatus,
@@ -297,36 +358,64 @@ fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
 }
 
 #[inline]
+fn parse_time(t: &str) -> Option<u16> {
+    if let [minutes, seconds] = t.split(':').collect::<Vec<&str>>().as_slice()
+    {
+        return minutes
+            .parse::<u16>()
+            .and_then(|m| seconds.parse::<u16>().map(|s| (m * 60) + s))
+            .ok();
+    } else {
+        return None;
+    }
+}
+
+#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
-        if let Some(players) = play.players {
+        if let (
+            Some(players),
+            Some(period_time),
+            Some(period_time_remaining),
+        ) = (
+            play.players,
+            parse_time(&play.about.periodTime),
+            parse_time(&play.about.periodTimeRemaining),
+        ) {
+            let event_id: u16 = play.about.eventId;
+            let team_id: Option<u16> = play.team.map(|t| t.id);
+            let event: String = play.result.event;
+            let secondary_type: Option<String> = play.result.secondaryType;
+            let penality_severity: Option<String> =
+                play.result.penaltySeverity;
+            let penality_minutes: Option<u8> = play.result.penaltyMinutes;
+            let period: u8 = play.about.period;
+            let period_type: String = play.about.periodType;
+            let goals_away: u8 = play.about.goals.away;
+            let goals_home: u8 = play.about.goals.home;
+            let x: Option<f64> = play.coordinates.and_then(|c| c.x);
+            let y: Option<f64> = play.coordinates.and_then(|c| c.y);
             for player in players {
                 t.execute(
                     INSERT_EVENTS,
                     &[
+                        &event_id,
                         &game_id,
-                        &play.team.clone().map(|t| t.id),
+                        &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
-                        &play.about.eventId,
-                        &play.result.event,
-                        &play.result.secondaryType,
-                        &play.result.penaltySeverity,
-                        &play.result.penaltyMinutes,
-                        &play.about.period,
-                        &play.about.periodType,
-                        &play.about.periodTime,
-                        &play.about.periodTimeRemaining,
-                        &play.about.goals.away,
-                        &play.about.goals.home,
-                        &play
-                            .coordinates
-                            .clone()
-                            .and_then(|c| c.x.and_then(|x| x.as_f64())),
-                        &play
-                            .coordinates
-                            .clone()
-                            .and_then(|c| c.y.and_then(|y| y.as_f64())),
+                        &event,
+                        &secondary_type,
+                        &penality_severity,
+                        &penality_minutes,
+                        &period,
+                        &period_type,
+                        &period_time,
+                        &period_time_remaining,
+                        &goals_away,
+                        &goals_home,
+                        &x,
+                        &y,
                     ],
                 )
                 .void()
@@ -335,14 +424,53 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
     }
 }
 
-// fn insert_shifts(_t: &Connection, _shifts: Shifts) {
-// }
+fn insert_shifts(t: &Connection, shifts: Shifts) {
+    for shift in shifts.data {
+        if let (Some(start_time), Some(end_time), Some(event_number)) = (
+            parse_time(&shift.startTime),
+            parse_time(&shift.endTime),
+            shift.eventNumber,
+        ) {
+            t.execute(
+                INSERT_SHIFTS,
+                &[
+                    &shift.gameId.to_string(),
+                    &shift.teamId,
+                    &shift.playerId.to_string(),
+                    &shift.period,
+                    &start_time,
+                    &end_time,
+                    &shift.duration.map(|d| parse_time(&d)),
+                    &shift.shiftNumber,
+                    &shift.eventDescription.unwrap_or_else(|| "".to_string()),
+                    &event_number,
+                ],
+            )
+            .void()
+        }
+    }
+}
 
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            c.execute(CREATE_PLAYERS, &[]).void();
-            c.execute(CREATE_EVENTS, &[]).void();
+            let xs: [&str; 12] = [
+                CREATE_PLAYERS,
+                INDEX_PLAYERS_GAME_ID,
+                INDEX_PLAYERS_TEAM_ID,
+                CREATE_EVENTS,
+                INDEX_EVENTS_GAME_ID,
+                INDEX_EVENTS_TEAM_ID,
+                INDEX_EVENTS_PLAYER_ID,
+                INDEX_EVENTS_EVENT,
+                CREATE_SHIFTS,
+                INDEX_SHIFTS_GAME_ID,
+                INDEX_SHIFTS_TEAM_ID,
+                INDEX_SHIFTS_PLAYER_ID,
+            ];
+            for x in &xs {
+                c.execute(x, &[]).void();
+            }
             if let Ok(ids) = c.prepare(QUERY_GAME_IDS).and_then(|mut s| {
                 s.query_map(&[], |r| {
                     let id: String = r.get("id");
@@ -356,25 +484,31 @@ fn main() {
             }) {
                 if let Ok(t) = c.transaction() {
                     for pair in ids {
-                        if let Some((events, _shifts)) = pair {
-                            if let (Some(events), Some(_)) = {
+                        if let Some((events, shifts)) = pair {
+                            if let (Some(events), Some(shifts)) = {
                                 let events: Option<Events> =
                                     read_json(events.as_path());
-                                // let shifts: Option<Shifts> =
-                                //     read_json(shifts.as_path());
-                                // (events, shifts)
-                                (events, Some(()))
+                                let shifts: Option<Shifts> =
+                                    read_json(shifts.as_path());
+                                (events, shifts)
                             } {
-                                let teams: Teams =
-                                    events.liveData.boxscore.teams.clone();
-                                let away: Team = teams.away.clone();
-                                let home: Team = teams.home;
+                                let away: Team = events
+                                    .liveData
+                                    .boxscore
+                                    .teams
+                                    .away
+                                    .clone();
+                                let home: Team = events
+                                    .liveData
+                                    .boxscore
+                                    .teams
+                                    .home
+                                    .clone();
                                 let game_id: String =
                                     events.gamePk.to_string();
-                                println!("{}", &game_id);
                                 insert_players(&t, &game_id, away, home);
                                 insert_events(&t, &game_id, events);
-                                // insert_shifts(&t, shifts)
+                                insert_shifts(&t, shifts)
                             }
                         }
                     }

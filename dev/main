@@ -10,7 +10,7 @@ set -eu
 
 prelude () {
     clippy
-    cargo test --bin teams
+    cargo test --bin games
     rustfmts
     for x in teams schedule games; do
         if [ "$flag" = "debug" ]; then
@@ -57,14 +57,17 @@ postlude () {
     }
 
     for x in teams schedule; do
-        f "select count(*) from $x;"
-        f "select count(distinct id) from $x;"
+        f "SELECT COUNT(*) FROM $x;"
+        f "SELECT COUNT(DISTINCT id) FROM $x;"
     done
-    for x in players events; do
-        f "select count(distinct game_id) from $x;"
+    for x in players events shifts; do
+        f "SELECT COUNT(*) FROM $x"
+        f "SELECT COUNT(DISTINCT game_id) FROM $x;"
     done
-    f "select count(distinct id) from players where roster_status = 'Y';"
-    f "select count(distinct player_id) from events;"
+    f "SELECT COUNT(DISTINCT id) FROM players WHERE roster_status = 'Y';"
+    for x in events shifts; do
+        f "SELECT COUNT(DISTINCT player_id) FROM $x;"
+    done
 }
 
 main () {
