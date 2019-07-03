@@ -8,6 +8,7 @@ use crate::blobs::read_json;
 use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::ResultExt;
+use rayon::prelude::*;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Number;
@@ -480,34 +481,29 @@ fn main() {
                     filenames
                 })
             }) {
+                let pairs: Vec<Option<(Events, Shifts)>> = ids
+                    .par_iter()
+                    .map(|pair| {
+                        pair.as_ref().and_then(|(events, shifts)| {
+                            let events: Option<Events> =
+                                read_json(events.as_path());
+                            let shifts: Option<Shifts> =
+                                read_json(shifts.as_path());
+                            events.and_then(|e| shifts.map(|s| (e, s)))
+                        })
+                    })
+                    .collect();
                 if let Ok(t) = c.transaction() {
-                    for pair in ids {
+                    for pair in pairs {
                         if let Some((events, shifts)) = pair {
-                            if let (Some(events), Some(shifts)) = {
-                                let events: Option<Events> =
-                                    read_json(events.as_path());
-                                let shifts: Option<Shifts> =
-                                    read_json(shifts.as_path());
-                                (events, shifts)
-                            } {
-                                let away: Team = events
-                                    .liveData
-                                    .boxscore
-                                    .teams
-                                    .away
-                                    .clone();
-                                let home: Team = events
-                                    .liveData
-                                    .boxscore
-                                    .teams
-                                    .home
-                                    .clone();
-                                let game_id: String =
-                                    events.gamePk.to_string();
-                                insert_players(&t, &game_id, away, home);
-                                insert_events(&t, &game_id, events);
-                                insert_shifts(&t, shifts)
-                            }
+                            let away: Team =
+                                events.liveData.boxscore.teams.away.clone();
+                            let home: Team =
+                                events.liveData.boxscore.teams.home.clone();
+                            let game_id: String = events.gamePk.to_string();
+                            insert_players(&t, &game_id, away, home);
+                            insert_events(&t, &game_id, events);
+                            insert_shifts(&t, shifts)
                         }
                     }
                     t.commit().void()
