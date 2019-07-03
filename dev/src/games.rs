@@ -155,9 +155,7 @@ const QUERY_GAME_IDS: &str = {
      FROM schedule \
      WHERE type IN ('R', 'P') \
      AND status_abstract = 'Final' \
-     AND status_detailed = 'Final' \
-     ORDER BY DATE(date) DESC \
-     LIMIT 20;"
+     AND status_detailed = 'Final';"
 };
 
 const CREATE_PLAYERS: &str = {
