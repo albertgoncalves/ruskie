@@ -7,11 +7,12 @@ use crate::blobs::read_json;
 use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::{OptionExt, ResultExt};
+use rayon::prelude::*;
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Number;
 use std::env::var;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Deserialize)]
 struct Id {
@@ -124,13 +125,12 @@ fn scrape(
     end: &str,
     wd: &str,
     id: Option<u32>,
-) -> Option<Schedule> {
-    id.and_then(|id| {
+) -> Option<PathBuf> {
+    id.map(|id| {
         let x: PathBuf =
             filename(&wd, "schedule", format!("{}-{}-{}", &start, &end, id));
-        let y: &Path = x.as_path();
-        get_to_file(&url(id, &start, &end), y, 500);
-        read_json(y)
+        get_to_file(&url(id, &start, &end), x.as_path(), 500);
+        x
     })
 }
 
@@ -178,13 +178,17 @@ fn main() {
                         id
                     })
                     .map(|ids| {
-                        let schedules: Vec<Option<Schedule>> = ids
+                        let schedules: Vec<Option<PathBuf>> = ids
                             .map(|id| scrape(&start, &end, &wd, id.ok()))
                             .collect();
                         schedules
                     })
                 })
             } {
+                let schedules: Vec<Option<Schedule>> = schedules
+                    .par_iter()
+                    .map(|s| s.as_ref().and_then(|s| read_json(s.as_path())))
+                    .collect();
                 schedules
                     .into_iter()
                     .map(|schedule| {
