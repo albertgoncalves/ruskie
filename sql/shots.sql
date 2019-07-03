@@ -2,8 +2,6 @@ with shots as (
     select
         e.game_id
         , s.team_id
-        , c.type
-        , c.season
         , e.period
         , e.period_time
         , e.x
@@ -22,7 +20,6 @@ with shots as (
         and s.period = e.period
         and e.period_time > s.start_time
         and e.period_time <= s.end_time
-        and s.period <= 3
         and s.event = ''
         and e.event in ('Goal', 'Missed Shot', 'Shot')
         and e.player_type in ('Scorer', 'Shooter')
@@ -33,6 +30,8 @@ with shots as (
     inner join
         schedule c
         on c.id = e.game_id
+        and c.season = '20182019'
+        and c.type = 'P'
     group by
         e.game_id
         , s.team_id
@@ -67,21 +66,38 @@ with shots as (
         , period_time
 )
 
+, flip as (
+    select
+        game_id
+        , team_id
+        , period
+        , avg(x) < 0 as flag
+    from
+        shots
+    where
+        event_for
+    group by
+        game_id
+        , team_id
+        , period
+)
+
 , for_against as (
     select
         f.game_id
-        , f.type
-        , f.season
         , f.period
         , f.period_time
-        , f.x
-        , f.y
+        , case when l.flag
+            then f.x * -1
+            else f.x end as x
+        , case when l.flag
+            then f.y * -1
+            else f.y end as y
         , f.goal
         , coalesce(s.penalty, false) as penalty
         , f.team_id as team_for
         , a.team_id as team_against
         , f.player_id
-        , p.full_name
         , p.position_abbreviation
         , p.shoots_catches
         , f.home
@@ -104,6 +120,11 @@ with shots as (
         players p
         on p.id = f.player_id
         and p.game_id = f.game_id
+    inner join
+        flip l
+        on f.game_id = l.game_id
+        and f.team_id = l.team_id
+        and f.period = l.period
     left join
         penalty_shots s
         on f.game_id = s.game_id
@@ -116,14 +137,14 @@ select
 from
     for_against
 where
-    type = 'R'
+    not penalty
     and skaters_for = 6
     and goalie_for = 1
-    and skaters_against = 6
+    and skaters_against = 5
     and goalie_against = 1
-    and penalty
 order by
-    period
+    game_id
+    , period
     , period_time
     , team_for
 ;
