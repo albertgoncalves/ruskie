@@ -145,9 +145,9 @@ const QUERY_GAME_IDS: &str = {
 
 const CREATE_PLAYERS: &str = {
     "CREATE TABLE IF NOT EXISTS players \
-     ( game_id TEXT \
+     ( id TEXT NOT NULL \
+     , game_id TEXT \
      , team_id INTEGER NOT NULL \
-     , id TEXT NOT NULL \
      , full_name TEXT NOT NULL \
      , shoots_catches TEXT \
      , roster_status TEXT NOT NULL \
@@ -155,14 +155,20 @@ const CREATE_PLAYERS: &str = {
      , position_abbreviation TEXT NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
      , UNIQUE(id, game_id) \
-     ); "
+     );"
 };
+
+const INDEX_PLAYERS_GAME_ID: &str =
+    "CREATE INDEX index_game_id ON players(game_id);";
+
+const INDEX_PLAYERS_TEAM_ID: &str =
+    "CREATE INDEX index_team_id ON players(team_id);";
 
 const INSERT_PLAYERS: &str = {
     "INSERT INTO players \
-     ( game_id \
+     ( id \
+     , game_id \
      , team_id \
-     , id \
      , full_name \
      , shoots_catches \
      , roster_status \
@@ -173,35 +179,46 @@ const INSERT_PLAYERS: &str = {
 
 const CREATE_EVENTS: &str = {
     "CREATE TABLE IF NOT EXISTS events \
-     ( game_id TEXT \
+     ( id INTEGER NOT NULL \
+     , game_id TEXT \
      , team_id TEXT NOT NULL \
      , player_id TEXT \
      , player_type TEXT NOT NULL \
-     , id INTEGER NOT NULL \
      , event TEXT NOT NULL \
      , secondary_type TEXT \
      , penality_severity TEXT \
      , penality_minutes INTEGER \
      , period INTEGER NOT NULL \
      , period_type TEXT NOT NULL \
-     , period_time TEXT NOT NULL \
-     , period_time_remaining TEXT NOT NULL \
+     , period_time INTEGER \
+     , period_time_remaining INTEGER \
      , away_score INTEGER NOT NULL \
      , home_score INTEGER NOT NULL \
      , x REAL \
      , y REAL \
-     , FOREIGN KEY (player_id, game_id) REFERENCES players(id, game_id) \
-     , UNIQUE(game_id, player_id, id) \
-     ); "
+     , FOREIGN KEY (game_id) REFERENCES schedule(id) \
+     , UNIQUE(id, game_id, player_id) \
+     );"
 };
+
+const INDEX_EVENTS_GAME_ID: &str =
+    "CREATE INDEX index_game_id ON events(game_id);";
+
+const INDEX_EVENTS_TEAM_ID: &str =
+    "CREATE INDEX index_team_id ON events(team_id);";
+
+const INDEX_EVENTS_PLAYER_ID: &str =
+    "CREATE INDEX index_player_id ON events(player_id);";
+
+const INDEX_EVENTS_EVENT: &str = "CREATE INDEX index_event ON events(event);";
 
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
-     ( game_id \
+     ( id \
+     , game_id \
      , team_id \
      , player_id \
      , player_type \
-     , id \
      , event \
      , secondary_type \
      , penality_severity \
@@ -277,9 +294,9 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
         t.execute(
             INSERT_PLAYERS,
             &[
+                &player.person.id.to_string(),
                 &game_id,
                 &team.team.id,
-                &player.person.id.to_string(),
                 &player.person.fullName,
                 &player.person.shootsCatches,
                 &player.person.rosterStatus,
@@ -314,8 +331,8 @@ fn parse_time(t: &str) -> Option<u16> {
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     for play in events.liveData.plays.allPlays {
         if let Some(players) = play.players {
-            let team_id: Option<u16> = play.team.map(|t| t.id);
             let event_id: u16 = play.about.eventId;
+            let team_id: Option<u16> = play.team.map(|t| t.id);
             let event: String = play.result.event;
             let secondary_type: Option<String> = play.result.secondaryType;
             let penality_severity: Option<String> =
@@ -334,11 +351,11 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
                 t.execute(
                     INSERT_EVENTS,
                     &[
+                        &event_id,
                         &game_id,
                         &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
-                        &event_id,
                         &event,
                         &secondary_type,
                         &penality_severity,
@@ -366,7 +383,13 @@ fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_PLAYERS, &[]).void();
+            c.execute(INDEX_PLAYERS_GAME_ID, &[]).void();
+            c.execute(INDEX_PLAYERS_TEAM_ID, &[]).void();
             c.execute(CREATE_EVENTS, &[]).void();
+            c.execute(INDEX_EVENTS_GAME_ID, &[]).void();
+            c.execute(INDEX_EVENTS_TEAM_ID, &[]).void();
+            c.execute(INDEX_EVENTS_PLAYER_ID, &[]).void();
+            c.execute(INDEX_EVENTS_EVENT, &[]).void();
             if let Ok(ids) = c.prepare(QUERY_GAME_IDS).and_then(|mut s| {
                 s.query_map(&[], |r| {
                     let id: String = r.get("id");

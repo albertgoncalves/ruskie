@@ -79,6 +79,12 @@ const CREATE_GAMES: &str = {
      );"
 };
 
+const INDEX_HOME_TEAM_ID: &str =
+    "CREATE INDEX index_home_team_id ON schedule(home_team_id);";
+
+const INDEX_AWAY_TEAM_ID: &str =
+    "CREATE INDEX index_away_team_id ON schedule(away_team_id);";
+
 const QUERY_TEAM_IDS: &str = {
     "SELECT t.id \
      FROM teams t;"
@@ -163,6 +169,8 @@ fn main() {
     ) {
         if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_GAMES, &[]).void();
+            c.execute(INDEX_HOME_TEAM_ID, &[]).void();
+            c.execute(INDEX_AWAY_TEAM_ID, &[]).void();
             if let Ok(schedules) = {
                 c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
                     s.query_map(&[], |r| {
