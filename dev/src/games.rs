@@ -143,7 +143,6 @@ struct Shift {
     duration: Option<String>,
     shiftNumber: u8,
     eventDescription: Option<String>,
-    eventNumber: Option<u16>,
 }
 
 #[derive(Deserialize)]
@@ -263,10 +262,8 @@ const CREATE_SHIFTS: &str = {
      , duration INTEGER \
      , shift_number INTEGER NOT NULL \
      , event TEXT NOT NULL \
-     , event_number INTEGER NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
-     , UNIQUE(game_id, player_id, period, start_time, end_time, event \
-     , event_number) \
+     , UNIQUE(game_id, player_id, period, start_time, end_time, event) \
      );"
 };
 
@@ -281,8 +278,7 @@ const INSERT_SHIFTS: &str = {
      , duration \
      , shift_number \
      , event \
-     , event_number \
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
 };
 
 const INDEX_SHIFTS_GAME_ID: &str =
@@ -425,11 +421,9 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
 
 fn insert_shifts(t: &Connection, shifts: Shifts) {
     for shift in shifts.data {
-        if let (Some(start_time), Some(end_time), Some(event_number)) = (
-            parse_time(&shift.startTime),
-            parse_time(&shift.endTime),
-            shift.eventNumber,
-        ) {
+        if let (Some(start_time), Some(end_time)) =
+            (parse_time(&shift.startTime), parse_time(&shift.endTime))
+        {
             t.execute(
                 INSERT_SHIFTS,
                 &[
@@ -442,7 +436,6 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
                     &shift.duration.map(|d| parse_time(&d)),
                     &shift.shiftNumber,
                     &shift.eventDescription.unwrap_or_else(|| "".to_string()),
-                    &event_number,
                 ],
             )
             .void()
