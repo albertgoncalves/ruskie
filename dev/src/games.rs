@@ -142,6 +142,7 @@ struct Shift {
     duration: Option<String>,
     shiftNumber: u8,
     eventDescription: Option<String>,
+    eventNumber: Option<u16>,
 }
 
 #[derive(Deserialize)]
@@ -279,13 +280,15 @@ const CREATE_SHIFTS: &str = {
      , team_id INTEGER NOT NULL \
      , player_id TEXT NOT NULL \
      , period INTEGER NOT NULL \
-     , start_time INTEGER \
-     , end_time INTEGER \
+     , start_time INTEGER NOT NULL \
+     , end_time INTEGER NOT NULL \
      , duration INTEGER \
      , shift_number INTEGER NOT NULL \
-     , event TEXT \
+     , event TEXT NOT NULL \
+     , event_number INTEGER NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
-     , UNIQUE(game_id, player_id, period, start_time, end_time, shift_number) \
+     , UNIQUE(game_id, player_id, period, start_time, end_time, event \
+     , event_number) \
      );"
 };
 
@@ -300,7 +303,8 @@ const INSERT_SHIFTS: &str = {
      , duration \
      , shift_number \
      , event \
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
+     , event_number \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
 const INDEX_SHIFTS_GAME_ID: &str =
@@ -438,21 +442,28 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
 
 fn insert_shifts(t: &Connection, shifts: Shifts) {
     for shift in shifts.data {
-        t.execute(
-            INSERT_SHIFTS,
-            &[
-                &shift.gameId.to_string(),
-                &shift.teamId,
-                &shift.playerId.to_string(),
-                &shift.period,
-                &parse_time(&shift.startTime),
-                &parse_time(&shift.endTime),
-                &shift.duration.map(|d| parse_time(&d)),
-                &shift.shiftNumber,
-                &shift.eventDescription,
-            ],
-        )
-        .void()
+        if let (Some(start_time), Some(end_time), Some(event_number)) = (
+            parse_time(&shift.startTime),
+            parse_time(&shift.endTime),
+            shift.eventNumber,
+        ) {
+            t.execute(
+                INSERT_SHIFTS,
+                &[
+                    &shift.gameId.to_string(),
+                    &shift.teamId,
+                    &shift.playerId.to_string(),
+                    &shift.period,
+                    &start_time,
+                    &end_time,
+                    &shift.duration.map(|d| parse_time(&d)),
+                    &shift.shiftNumber,
+                    &shift.eventDescription.unwrap_or_else(|| "".to_string()),
+                    &event_number,
+                ],
+            )
+            .void()
+        }
     }
 }
 
