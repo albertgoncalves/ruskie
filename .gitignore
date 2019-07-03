@@ -3,10 +3,6 @@
 !shell
 !.shellhook
 !*.nix
-!scripts/
-!*.sh
-!sql/
-!*.sql
 !dev/
 !src/
 !*.toml
