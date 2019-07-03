@@ -61,18 +61,12 @@ postlude () {
         f "SELECT COUNT(DISTINCT id) FROM $x;"
     done
     for x in players events shifts; do
-        f "SELECT COUNT(DISTINCT game_id) FROM $x;"
         f "SELECT COUNT(*) FROM $x"
+        f "SELECT COUNT(DISTINCT game_id) FROM $x;"
     done
     f "SELECT COUNT(DISTINCT id) FROM players WHERE roster_status = 'Y';"
     for x in events shifts; do
-        f "
-            SELECT COUNT(DISTINCT x.player_id)
-            FROM $x x
-            INNER JOIN schedule s
-            ON s.id = x.game_id
-            AND s.type IN ('R', 'P');
-        "
+        f "SELECT COUNT(DISTINCT player_id) FROM $x;"
     done
 }
 
