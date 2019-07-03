@@ -151,17 +151,13 @@ struct Shifts {
 }
 
 const QUERY_GAME_IDS: &str = {
-    "SELECT DISTINCT s.id \
-     FROM schedule s \
-     LEFT JOIN events e \
-     ON s.id = e.game_id \
-     LEFT JOIN shifts sh \
-     ON s.id = sh.game_id \
-     WHERE e.game_id IS NULL \
-     AND sh.game_id IS NULL \
-     AND s.status_abstract = 'Final' \
-     AND s.status_detailed = 'Final' \
-     AND s.type IN ('R', 'P');"
+    "SELECT id \
+     FROM schedule \
+     WHERE type IN ('R', 'P') \
+     AND status_abstract = 'Final' \
+     AND status_detailed = 'Final' \
+     ORDER BY DATE(date) DESC \
+     LIMIT 20;"
 };
 
 const CREATE_PLAYERS: &str = {
