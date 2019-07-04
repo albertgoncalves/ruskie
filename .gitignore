@@ -2,6 +2,8 @@
 !.gitignore
 !shell
 !.shellhook
+!README.md
+!cover.png
 !*.nix
 !dev/
 !src/
@@ -10,3 +12,5 @@
 !dev/main
 !sql/
 !*.sql
+!viz/
+!*.py
