@@ -28,6 +28,8 @@ class Plot:
 
 
 def main():
+    # $ cd $WD
+    # $ cat sql/shots.sql | sql ruskie.db -csv > viz/data.csv
     _, ax = Plot.setup(read_csv("{}/viz/data.csv".format(environ["WD"])))
     Plot.background(ax)
     Plot.aspect(ax)
