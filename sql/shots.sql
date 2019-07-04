@@ -10,7 +10,7 @@ with shots as (
         , e.event = 'Goal' as goal
         , (s.team_id = e.team_id) as event_for
         , (p.team_id = c.home_team_id) as home
-        , max((p.position = 'G')) as goalie
+        , max(p.position = 'G') as goalie
         , count(distinct s.player_id) as skaters
     from
         shifts s
