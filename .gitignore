@@ -10,3 +10,5 @@
 !dev/main
 !sql/
 !*.sql
+!viz/
+!*.py
