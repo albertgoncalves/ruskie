@@ -54,7 +54,7 @@ postlude () {
         rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
     }
 
-    for x in teams schedule players; do
+    for x in teams schedule; do
         f "SELECT COUNT(*) FROM $x;"
         f "SELECT COUNT(DISTINCT id) FROM $x;"
     done

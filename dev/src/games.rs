@@ -76,7 +76,6 @@ struct Person {
 
 #[derive(Deserialize, Clone)]
 struct Position {
-    r#type: String,
     abbreviation: String,
 }
 
@@ -143,7 +142,6 @@ struct Shift {
     duration: Option<String>,
     shiftNumber: u8,
     eventDescription: Option<String>,
-    eventNumber: Option<u16>,
 }
 
 #[derive(Deserialize)]
@@ -167,8 +165,7 @@ const CREATE_PLAYERS: &str = {
      , full_name TEXT NOT NULL \
      , shoots_catches TEXT \
      , roster_status TEXT NOT NULL \
-     , position_type TEXT NOT NULL \
-     , position_abbreviation TEXT NOT NULL \
+     , position TEXT NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
      , UNIQUE(id, game_id) \
      );"
@@ -188,9 +185,8 @@ const INSERT_PLAYERS: &str = {
      , full_name \
      , shoots_catches \
      , roster_status \
-     , position_type \
-     , position_abbreviation \
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8);"
+     , position \
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);"
 };
 
 const CREATE_EVENTS: &str = {
@@ -202,8 +198,8 @@ const CREATE_EVENTS: &str = {
      , player_type TEXT NOT NULL \
      , event TEXT NOT NULL \
      , secondary_type TEXT \
-     , penality_severity TEXT \
-     , penality_minutes INTEGER \
+     , penalty_severity TEXT \
+     , penalty_minutes INTEGER \
      , period INTEGER NOT NULL \
      , period_type TEXT NOT NULL \
      , period_time INTEGER NOT NULL \
@@ -227,7 +223,10 @@ const INDEX_EVENTS_PLAYER_ID: &str =
     "CREATE INDEX index_events_player_id ON events(player_id);";
 
 const INDEX_EVENTS_EVENT: &str =
-    "CREATE INDEX index_events_event ON events(event);";
+    "CREATE INDEX index_events_event ON events(event, player_type);";
+
+const INDEX_EVENTS_PENALTY_SEVERITY: &str =
+    "CREATE INDEX index_events_penalty_severity ON events(penalty_severity);";
 
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
@@ -238,8 +237,8 @@ const INSERT_EVENTS: &str = {
      , player_type \
      , event \
      , secondary_type \
-     , penality_severity \
-     , penality_minutes \
+     , penalty_severity \
+     , penalty_minutes \
      , period \
      , period_type \
      , period_time \
@@ -263,10 +262,8 @@ const CREATE_SHIFTS: &str = {
      , duration INTEGER \
      , shift_number INTEGER NOT NULL \
      , event TEXT NOT NULL \
-     , event_number INTEGER NOT NULL \
      , FOREIGN KEY (game_id) REFERENCES schedule(id) \
-     , UNIQUE(game_id, player_id, period, start_time, end_time, event \
-     , event_number) \
+     , UNIQUE(game_id, player_id, period, start_time, end_time, event) \
      );"
 };
 
@@ -281,8 +278,7 @@ const INSERT_SHIFTS: &str = {
      , duration \
      , shift_number \
      , event \
-     , event_number \
-     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
+     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9);"
 };
 
 const INDEX_SHIFTS_GAME_ID: &str =
@@ -342,7 +338,6 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
                 &player.person.fullName,
                 &player.person.shootsCatches,
                 &player.person.rosterStatus,
-                &player.position.r#type,
                 &player.position.abbreviation,
             ],
         )
@@ -385,9 +380,8 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
             let team_id: Option<u16> = play.team.map(|t| t.id);
             let event: String = play.result.event;
             let secondary_type: Option<String> = play.result.secondaryType;
-            let penality_severity: Option<String> =
-                play.result.penaltySeverity;
-            let penality_minutes: Option<u8> = play.result.penaltyMinutes;
+            let penalty_severity: Option<String> = play.result.penaltySeverity;
+            let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
             let period: u8 = play.about.period;
             let period_type: String = play.about.periodType;
             let goals_away: u8 = play.about.goals.away;
@@ -405,8 +399,8 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
                         &player.playerType,
                         &event,
                         &secondary_type,
-                        &penality_severity,
-                        &penality_minutes,
+                        &penalty_severity,
+                        &penalty_minutes,
                         &period,
                         &period_type,
                         &period_time,
@@ -425,11 +419,9 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
 
 fn insert_shifts(t: &Connection, shifts: Shifts) {
     for shift in shifts.data {
-        if let (Some(start_time), Some(end_time), Some(event_number)) = (
-            parse_time(&shift.startTime),
-            parse_time(&shift.endTime),
-            shift.eventNumber,
-        ) {
+        if let (Some(start_time), Some(end_time)) =
+            (parse_time(&shift.startTime), parse_time(&shift.endTime))
+        {
             t.execute(
                 INSERT_SHIFTS,
                 &[
@@ -442,7 +434,6 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
                     &shift.duration.map(|d| parse_time(&d)),
                     &shift.shiftNumber,
                     &shift.eventDescription.unwrap_or_else(|| "".to_string()),
-                    &event_number,
                 ],
             )
             .void()
@@ -453,7 +444,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            let xs: [&str; 12] = [
+            let xs: [&str; 13] = [
                 CREATE_PLAYERS,
                 INDEX_PLAYERS_GAME_ID,
                 INDEX_PLAYERS_TEAM_ID,
@@ -462,6 +453,7 @@ fn main() {
                 INDEX_EVENTS_TEAM_ID,
                 INDEX_EVENTS_PLAYER_ID,
                 INDEX_EVENTS_EVENT,
+                INDEX_EVENTS_PENALTY_SEVERITY,
                 CREATE_SHIFTS,
                 INDEX_SHIFTS_GAME_ID,
                 INDEX_SHIFTS_TEAM_ID,

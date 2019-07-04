@@ -8,3 +8,5 @@
 !*.toml
 !*.rs
 !dev/main
+!sql/
+!*.sql
