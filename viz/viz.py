@@ -2,6 +2,45 @@
 
 from matplotlib import lines, patches
 from matplotlib.pyplot import close, savefig, tight_layout
+from numpy import arange, array, concatenate, cos, radians, sin
+
+
+def curve(r, degree):
+    theta = radians(degree)
+    return (r * sin(theta), r * cos(theta))
+
+
+def unit_boards():
+    params = {
+        "min_x": -1,
+        "max_x": 4.5,
+        "min_y": 0,
+        "max_y": 4.5,
+    }
+    params["delta_y"] = params["max_y"] - params["min_y"]
+    lower_x, lower_y = curve(1, arange(90, 180, 1))
+    upper_x, upper_y = curve(1, arange(0, 90, 1))
+    xs = concatenate(
+        [
+            array([params["min_x"]]),
+            upper_x + params["max_x"] - 1,
+            array([params["max_x"]]),
+            lower_x + params["max_x"] - 1,
+            array([params["min_x"]]),
+        ],
+        axis=None,
+    )
+    ys = concatenate(
+        [
+            array(params["max_y"]),
+            upper_y + params["max_y"] - 1,
+            array([(params["delta_y"] / 2) + params["min_y"]]),
+            lower_y + params["min_y"] + 1,
+            array([params["min_y"]]),
+        ],
+        axis=None,
+    )
+    return (xs / params["delta_y"], ys / params["delta_y"])
 
 
 def rink(ax):
@@ -11,6 +50,7 @@ def rink(ax):
         "boardscurve_x": 77.45,
         "boardsmin_x": -5,
         "boardsmax_x": 100,
+        "boardspad": 1,
         "centerline_x": 0,
         "centerline_y": 0,
         "faceoff_radius": 15,
@@ -20,11 +60,27 @@ def rink(ax):
         "goal_y": -3,
         "goal_width": 2,
         "goal_height": 6,
-        "goalline_y": 42.6,
+        "goalline_y": 43,
+        "linepadmin_y": 0.5,
+        "linepadmax_y": 0.5,
     }
     kwargs = {"alpha": 0.25, "zorder": 0}
-    ax.set_xlim([params["boardsmin_x"] - 1, params["boardsmax_x"] + 1])
-    ax.set_ylim([(params["boards_y"] * -1) - 1, params["boards_y"] + 1])
+    ax.set_xlim([
+        params["boardsmin_x"] - params["boardspad"],
+        params["boardsmax_x"] + params["boardspad"],
+    ])
+    ax.set_ylim([
+        (params["boards_y"] + params["boardspad"]) * -1,
+        params["boards_y"] + params["boardspad"],
+    ])
+    boards_xs, boards_ys = unit_boards()
+    ax.plot(
+        boards_xs * params["boardsmax_x"],
+        (boards_ys * params["boards_y"] * 2) - params["boards_y"],
+        lw=2,
+        c="k",
+        **kwargs,
+    )
     ax.add_patch(patches.Rectangle(
         (params["goal_x"], params["goal_y"]),
         params["goal_width"],
@@ -40,34 +96,7 @@ def rink(ax):
             fill=None,
             **kwargs,
         ))
-        ax.add_patch(patches.Arc(
-            [params["boardscurve_x"] + 0.1, params["faceoff_y"] * z],
-            params["boards_y"],
-            params["boards_y"],
-            angle=angle,
-            theta1=270,
-            theta2=0,
-            lw=1,
-        ))
     xs = [
-        lines.Line2D(
-            [params["boardsmin_x"], params["boardscurve_x"]],
-            [params["boards_y"], params["boards_y"]],
-            c="k",
-            lw=1.25,
-        ),
-        lines.Line2D(
-            [params["boardsmin_x"], params["boardscurve_x"]],
-            [params["boards_y"] * -1, params["boards_y"] * -1],
-            c="k",
-            lw=1.25,
-        ),
-        lines.Line2D(
-            [params["boardsmax_x"], params["boardsmax_x"]],
-            [params["faceoff_y"] * -1, params["faceoff_y"]],
-            c="k",
-            lw=1,
-        ),
         lines.Line2D(
             [params["goal_x"], params["goal_x"]],
             [params["goalline_y"] * -1, params["goalline_y"]],
@@ -77,14 +106,20 @@ def rink(ax):
         ),
         lines.Line2D(
             [params["centerline_x"], params["centerline_x"]],
-            [(params["boards_y"] * -1) + 1, params["boards_y"] - 1.25],
+            [
+                (params["boards_y"] * -1) + params["linepadmin_y"],
+                params["boards_y"] - params["linepadmax_y"],
+            ],
             c="r",
             lw=7,
             **kwargs,
         ),
         lines.Line2D(
             [params["blueline_x"], params["blueline_x"]],
-            [(params["boards_y"] * -1) + 1, params["boards_y"] - 1.25],
+            [
+                (params["boards_y"] * -1) + params["linepadmin_y"],
+                params["boards_y"] - params["linepadmax_y"],
+            ],
             c="b",
             lw=7,
             **kwargs,
