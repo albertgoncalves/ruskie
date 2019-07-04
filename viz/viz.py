@@ -6,20 +6,20 @@ from matplotlib.pyplot import close, savefig, tight_layout
 
 def rink(ax):
     params = {
-        "faceoff_x": 69,
-        "faceoff_y": 22.475,
-        "faceoff_radius": 15,
         "blueline_x": 29,
+        "boards_y": 45,
+        "boardscurve_x": 77.45,
+        "boardsmin_x": -5,
+        "boardsmax_x": 100,
         "centerline_x": 0,
         "centerline_y": 0,
+        "faceoff_radius": 15,
+        "faceoff_x": 69,
+        "faceoff_y": 22.475,
         "goal_x": 87,
         "goal_y": -3,
         "goal_width": 2,
         "goal_height": 6,
-        "boardscurve_x": 77.45,
-        "boardsmin_x": -5,
-        "boardsmax_x": 100,
-        "boards_y": 45,
         "goalline_y": 42.6,
     }
     kwargs = {"alpha": 0.25, "zorder": 0}
