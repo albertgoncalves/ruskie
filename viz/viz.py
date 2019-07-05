@@ -49,7 +49,8 @@ def rink(ax):
         "boardscurve_x": 77.45,
         "boardsmin_x": -5,
         "boardsmax_x": 100,
-        "centerline": 0,
+        "centerline_x": 0,
+        "centerline_y": 0,
         "faceoff_radius": 15,
         "faceoff_x": 69,
         "faceoff_y": 22,
@@ -102,7 +103,7 @@ def rink(ax):
             **kwargs,
         ),
         lines.Line2D(
-            [params["centerline"], params["centerline"]],
+            [params["centerline_x"], params["centerline_x"]],
             [params["boardspad_y"] * -1, params["boardspad_y"]],
             c="r",
             lw=7,
@@ -117,7 +118,7 @@ def rink(ax):
         ),
         lines.Line2D(
             [params["boardsmin_x"], params["boardsmax_x"]],
-            [params["centerline"], params["centerline"]],
+            [params["centerline_y"], params["centerline_y"]],
             c="k",
             lw=1.5,
             ls="--",
