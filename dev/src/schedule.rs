@@ -8,7 +8,7 @@ use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::{OptionExt, ResultExt};
 use rayon::prelude::*;
-use rusqlite::Connection;
+use rusqlite::{Connection, NO_PARAMS};
 use serde::Deserialize;
 use serde_json::Number;
 use std::env::var;
@@ -142,24 +142,23 @@ fn scrape(
 #[inline]
 fn insert(schedule: Schedule, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
-        for date in schedule.dates {
-            for game in date.games {
-                t.execute(
-                    INSERT_GAMES,
-                    &[
+        if let Ok(mut p) = t.prepare(INSERT_GAMES) {
+            for date in schedule.dates {
+                for game in date.games {
+                    p.execute(&[
                         &game.gamePk.to_string(),
                         &game.status.abstractGameState,
                         &game.status.detailedState,
-                        &game.status.startTimeTBD,
+                        &game.status.startTimeTBD.to_string(),
                         &date.date,
                         &game.gameType,
                         &game.season,
-                        &game.teams.home.team.id,
-                        &game.teams.away.team.id,
+                        &game.teams.home.team.id.to_string(),
+                        &game.teams.away.team.id.to_string(),
                         &game.venue.name,
-                    ],
-                )
-                .void()
+                    ])
+                    .void()
+                }
             }
         }
         t.commit().void()
@@ -181,15 +180,11 @@ fn main() {
                 INDEX_SEASON,
             ];
             for x in &xs {
-                c.execute(x, &[]).void();
+                c.execute(x, NO_PARAMS).void();
             }
             if let Ok(schedules) = {
                 c.prepare(QUERY_TEAM_IDS).and_then(|mut s| {
-                    s.query_map(&[], |r| {
-                        let id: u32 = r.get("id");
-                        id
-                    })
-                    .map(|ids| {
+                    s.query_map(NO_PARAMS, |r| r.get("id")).map(|ids| {
                         ids.map(|id| scrape(&start, &end, &wd, id.ok()))
                             .collect::<Vec<Option<PathBuf>>>()
                     })
