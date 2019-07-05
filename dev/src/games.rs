@@ -332,7 +332,7 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
         for (_, player) in team.players {
             p.execute(&[
                 &player.person.id.to_string(),
-                &game_id.to_string(),
+                game_id,
                 &team.team.id.to_string(),
                 &player.person.fullName,
                 &player
@@ -384,38 +384,43 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
                 parse_time(&play.about.periodTime),
                 parse_time(&play.about.periodTimeRemaining),
             ) {
-                let event_id: u16 = play.about.eventId;
-                let team_id: Option<u16> = play.team.map(|t| t.id);
+                let event_id: String = play.about.eventId.to_string();
+                let team_id: String = or_null(play.team.map(|t| t.id));
                 let event: String = play.result.event;
-                let secondary_type: Option<String> = play.result.secondaryType;
-                let penalty_severity: Option<String> =
-                    play.result.penaltySeverity;
-                let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
-                let period: u8 = play.about.period;
+                let secondary_type: String =
+                    or_null(play.result.secondaryType);
+                let penalty_severity: String =
+                    or_null(play.result.penaltySeverity);
+                let penalty_minutes: String =
+                    or_null(play.result.penaltyMinutes);
+                let period: String = play.about.period.to_string();
                 let period_type: String = play.about.periodType;
-                let goals_away: u8 = play.about.goals.away;
-                let goals_home: u8 = play.about.goals.home;
-                let x: Option<f64> = play.coordinates.and_then(|c| c.x);
-                let y: Option<f64> = play.coordinates.and_then(|c| c.y);
+                let period_time: String = period_time.to_string();
+                let period_time_remaining: String =
+                    period_time_remaining.to_string();
+                let goals_away: String = play.about.goals.away.to_string();
+                let goals_home: String = play.about.goals.home.to_string();
+                let x: String = or_null(play.coordinates.and_then(|c| c.x));
+                let y: String = or_null(play.coordinates.and_then(|c| c.y));
                 for player in players {
                     p.execute(&[
-                        &event_id.to_string(),
-                        &game_id.to_string(),
-                        &or_null(team_id),
+                        &event_id,
+                        game_id,
+                        &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
                         &event,
-                        &or_null(secondary_type.clone()),
-                        &or_null(penalty_severity.clone()),
-                        &or_null(penalty_minutes),
-                        &period.to_string(),
+                        &secondary_type,
+                        &penalty_severity,
+                        &penalty_minutes,
+                        &period,
                         &period_type,
-                        &period_time.to_string(),
-                        &period_time_remaining.to_string(),
-                        &goals_away.to_string(),
-                        &goals_home.to_string(),
-                        &or_null(x),
-                        &or_null(y),
+                        &period_time,
+                        &period_time_remaining,
+                        &goals_away,
+                        &goals_home,
+                        &x,
+                        &y,
                     ])
                     .void()
                 }
