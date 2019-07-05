@@ -1,3 +1,6 @@
+PRAGMA cache_size = 50000;
+PRAGMA temp_store = 2;
+
 with shots as (
     select
         e.game_id
@@ -30,8 +33,6 @@ with shots as (
     inner join
         schedule c
         on c.id = e.game_id
-        and c.season = '20182019'
-        and c.type = 'P'
     group by
         e.game_id
         , s.team_id
