@@ -60,7 +60,7 @@ def rink(ax):
         "goalline_y": 43,
         "pad": 1,
     }
-    params["boardspad_y"] = params["boards_y"] - (params["pad"] / 2)
+    params["boardspad_y"] = params["boards_y"] - (params["pad"] * 0.75)
     kwargs = {"alpha": 0.25, "zorder": 0}
     ax.set_xlim([
         params["boardsmin_x"] - params["pad"],
@@ -74,7 +74,7 @@ def rink(ax):
     ax.plot(
         boards_xs * params["boardsmax_x"],
         (boards_ys * params["boards_y"] * 2) - params["boards_y"],
-        lw=2,
+        lw=3.5,
         c="k",
         **kwargs,
     )
