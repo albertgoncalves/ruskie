@@ -9,7 +9,7 @@ use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::ResultExt;
 use rayon::prelude::*;
-use rusqlite::Connection;
+use rusqlite::{Connection, NO_PARAMS};
 use serde::Deserialize;
 use serde_json::Number;
 use std::collections::HashMap;
@@ -328,20 +328,22 @@ fn scrape_pair<'a>(
 
 #[inline]
 fn insert_player(t: &Connection, game_id: &str, team: Team) {
-    for (_, player) in team.players {
-        t.execute(
-            INSERT_PLAYERS,
-            &[
+    if let Ok(mut p) = t.prepare(INSERT_PLAYERS) {
+        for (_, player) in team.players {
+            p.execute(&[
                 &player.person.id.to_string(),
-                &game_id,
-                &team.team.id,
+                &game_id.to_string(),
+                &team.team.id.to_string(),
                 &player.person.fullName,
-                &player.person.shootsCatches,
+                &player
+                    .person
+                    .shootsCatches
+                    .unwrap_or_else(|| "NULL".to_string()),
                 &player.person.rosterStatus,
                 &player.position.abbreviation,
-            ],
-        )
-        .void()
+            ])
+            .void()
+        }
     }
 }
 
@@ -365,78 +367,82 @@ fn parse_time(t: &str) -> Option<u16> {
 }
 
 #[inline]
+fn or_null<T: ToString>(x: Option<T>) -> String {
+    x.map_or_else(|| "NULL".to_string(), |y| y.to_string())
+}
+
+#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
-    for play in events.liveData.plays.allPlays {
-        if let (
-            Some(players),
-            Some(period_time),
-            Some(period_time_remaining),
-        ) = (
-            play.players,
-            parse_time(&play.about.periodTime),
-            parse_time(&play.about.periodTimeRemaining),
-        ) {
-            let event_id: u16 = play.about.eventId;
-            let team_id: Option<u16> = play.team.map(|t| t.id);
-            let event: String = play.result.event;
-            let secondary_type: Option<String> = play.result.secondaryType;
-            let penalty_severity: Option<String> = play.result.penaltySeverity;
-            let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
-            let period: u8 = play.about.period;
-            let period_type: String = play.about.periodType;
-            let goals_away: u8 = play.about.goals.away;
-            let goals_home: u8 = play.about.goals.home;
-            let x: Option<f64> = play.coordinates.and_then(|c| c.x);
-            let y: Option<f64> = play.coordinates.and_then(|c| c.y);
-            for player in players {
-                t.execute(
-                    INSERT_EVENTS,
-                    &[
-                        &event_id,
-                        &game_id,
-                        &team_id,
+    if let Ok(mut p) = t.prepare(INSERT_EVENTS) {
+        for play in events.liveData.plays.allPlays {
+            if let (
+                Some(players),
+                Some(period_time),
+                Some(period_time_remaining),
+            ) = (
+                play.players,
+                parse_time(&play.about.periodTime),
+                parse_time(&play.about.periodTimeRemaining),
+            ) {
+                let event_id: u16 = play.about.eventId;
+                let team_id: Option<u16> = play.team.map(|t| t.id);
+                let event: String = play.result.event;
+                let secondary_type: Option<String> = play.result.secondaryType;
+                let penalty_severity: Option<String> =
+                    play.result.penaltySeverity;
+                let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
+                let period: u8 = play.about.period;
+                let period_type: String = play.about.periodType;
+                let goals_away: u8 = play.about.goals.away;
+                let goals_home: u8 = play.about.goals.home;
+                let x: Option<f64> = play.coordinates.and_then(|c| c.x);
+                let y: Option<f64> = play.coordinates.and_then(|c| c.y);
+                for player in players {
+                    p.execute(&[
+                        &event_id.to_string(),
+                        &game_id.to_string(),
+                        &or_null(team_id),
                         &player.player.id.to_string(),
                         &player.playerType,
                         &event,
-                        &secondary_type,
-                        &penalty_severity,
-                        &penalty_minutes,
-                        &period,
+                        &or_null(secondary_type.clone()),
+                        &or_null(penalty_severity.clone()),
+                        &or_null(penalty_minutes),
+                        &period.to_string(),
                         &period_type,
-                        &period_time,
-                        &period_time_remaining,
-                        &goals_away,
-                        &goals_home,
-                        &x,
-                        &y,
-                    ],
-                )
-                .void()
+                        &period_time.to_string(),
+                        &period_time_remaining.to_string(),
+                        &goals_away.to_string(),
+                        &goals_home.to_string(),
+                        &or_null(x),
+                        &or_null(y),
+                    ])
+                    .void()
+                }
             }
         }
     }
 }
 
 fn insert_shifts(t: &Connection, shifts: Shifts) {
-    for shift in shifts.data {
-        if let (Some(start_time), Some(end_time)) =
-            (parse_time(&shift.startTime), parse_time(&shift.endTime))
-        {
-            t.execute(
-                INSERT_SHIFTS,
-                &[
+    if let Ok(mut p) = t.prepare(INSERT_SHIFTS) {
+        for shift in shifts.data {
+            if let (Some(start_time), Some(end_time)) =
+                (parse_time(&shift.startTime), parse_time(&shift.endTime))
+            {
+                p.execute(&[
                     &shift.gameId.to_string(),
-                    &shift.teamId,
+                    &shift.teamId.to_string(),
                     &shift.playerId.to_string(),
-                    &shift.period,
-                    &start_time,
-                    &end_time,
-                    &shift.duration.map(|d| parse_time(&d)),
-                    &shift.shiftNumber,
+                    &shift.period.to_string(),
+                    &start_time.to_string(),
+                    &end_time.to_string(),
+                    &or_null(shift.duration.and_then(|d| parse_time(&d))),
+                    &shift.shiftNumber.to_string(),
                     &shift.eventDescription.unwrap_or_else(|| "".to_string()),
-                ],
-            )
-            .void()
+                ])
+                .void()
+            }
         }
     }
 }
@@ -460,14 +466,10 @@ fn main() {
                 INDEX_SHIFTS_PLAYER_ID,
             ];
             for x in &xs {
-                c.execute(x, &[]).void();
+                c.execute(x, NO_PARAMS).void();
             }
             if let Ok(ids) = c.prepare(QUERY_GAME_IDS).and_then(|mut s| {
-                s.query_map(&[], |r| {
-                    let id: String = r.get("id");
-                    id
-                })
-                .map(|ids| {
+                s.query_map(NO_PARAMS, |r| r.get("id")).map(|ids| {
                     ids.map(|id| (scrape_pair(&wd, &id.ok())))
                         .collect::<Vec<Option<(PathBuf, PathBuf)>>>()
                 })

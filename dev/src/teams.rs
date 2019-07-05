@@ -5,7 +5,7 @@ mod void;
 use crate::blobs::read_json;
 use crate::sql::connect;
 use crate::void::ResultExt;
-use rusqlite::Connection;
+use rusqlite::{Connection, NO_PARAMS};
 use serde::Deserialize;
 use std::env::var;
 use std::path::Path;
@@ -49,12 +49,16 @@ const INSERT_TEAMS: &str = {
 
 fn insert(c: &mut Connection, teams: &[Team]) {
     if let Ok(t) = c.transaction() {
-        for team in teams {
-            t.execute(
-                INSERT_TEAMS,
-                &[&team.id, &team.abbreviation, &team.name, &team.venue.name],
-            )
-            .void();
+        if let Ok(mut p) = t.prepare(INSERT_TEAMS) {
+            for team in teams {
+                p.execute(&[
+                    &team.id.to_string(),
+                    &team.abbreviation,
+                    &team.name,
+                    &team.venue.name,
+                ])
+                .void();
+            }
         }
         t.commit().void()
     }
@@ -63,7 +67,7 @@ fn insert(c: &mut Connection, teams: &[Team]) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            c.execute(CREATE_TEAMS, &[]).void();
+            c.execute(CREATE_TEAMS, NO_PARAMS).void();
             if let Some(teams) = {
                 let teams: Option<Teams> =
                     read_json(Path::new(&format!("{}/data/teams.json", &wd)));
