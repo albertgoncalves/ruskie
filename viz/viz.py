@@ -19,27 +19,24 @@ def unit_boards():
     params["delta_y"] = params["max"] - params["min_y"]
     lower_x, lower_y = curve(1, arange(90, 180, 1))
     upper_x, upper_y = curve(1, arange(0, 90, 1))
-    xs = concatenate(
-        [
-            array([params["min_x"]]),
-            upper_x + params["max"] - 1,
-            array([params["max"]]),
-            lower_x + params["max"] - 1,
-            array([params["min_x"]]),
-        ],
-        axis=None,
+    xs = [
+        array([params["min_x"]]),
+        upper_x + params["max"] - 1,
+        array([params["max"]]),
+        lower_x + params["max"] - 1,
+        array([params["min_x"]]),
+    ]
+    ys = [
+        array(params["max"]),
+        upper_y + params["max"] - 1,
+        array([(params["delta_y"] / 2) + params["min_y"]]),
+        lower_y + params["min_y"] + 1,
+        array([params["min_y"]]),
+    ]
+    return (
+        concatenate(xs, axis=None) / params["delta_y"],
+        concatenate(ys, axis=None) / params["delta_y"],
     )
-    ys = concatenate(
-        [
-            array(params["max"]),
-            upper_y + params["max"] - 1,
-            array([(params["delta_y"] / 2) + params["min_y"]]),
-            lower_y + params["min_y"] + 1,
-            array([params["min_y"]]),
-        ],
-        axis=None,
-    )
-    return (xs / params["delta_y"], ys / params["delta_y"])
 
 
 def rink(ax):
