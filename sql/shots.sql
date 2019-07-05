@@ -1,5 +1,5 @@
-PRAGMA cache_size = 50000;
-PRAGMA temp_store = 2;
+pragma cache_size = 50000;
+pragma temp_store = 2;
 
 with shots as (
     select
