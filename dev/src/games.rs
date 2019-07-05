@@ -228,6 +228,11 @@ const INDEX_EVENTS_EVENT: &str =
 const INDEX_EVENTS_PENALTY_SEVERITY: &str =
     "CREATE INDEX index_events_penalty_severity ON events(penalty_severity);";
 
+const INDEX_EVENTS_MULTIPLE: &str = {
+    "CREATE INDEX index_events_multiple \
+     ON events(game_id, period, period_time, event, player_type);"
+};
+
 const INSERT_EVENTS: &str = {
     "INSERT INTO events
      ( id \
@@ -289,6 +294,14 @@ const INDEX_SHIFTS_TEAM_ID: &str =
 
 const INDEX_SHIFTS_PLAYER_ID: &str =
     "CREATE INDEX index_shifts_player_id ON shifts(player_id);";
+
+const INDEX_SHIFTS_EVENT: &str =
+    "CREATE INDEX index_shifts_event ON shifts(event);";
+
+const INDEX_SHIFTS_MULTIPLE: &str = {
+    "CREATE INDEX index_shifts_multiple \
+     ON shifts(event, start_time, end_time);"
+};
 
 #[inline]
 fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> PathBuf {
@@ -455,7 +468,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
 fn main() {
     if let Ok(wd) = var("WD") {
         if let Ok(mut c) = connect(&wd) {
-            let xs: [&str; 13] = [
+            let xs: [&str; 16] = [
                 CREATE_PLAYERS,
                 INDEX_PLAYERS_GAME_ID,
                 INDEX_PLAYERS_TEAM_ID,
@@ -465,10 +478,13 @@ fn main() {
                 INDEX_EVENTS_PLAYER_ID,
                 INDEX_EVENTS_EVENT,
                 INDEX_EVENTS_PENALTY_SEVERITY,
+                INDEX_EVENTS_MULTIPLE,
                 CREATE_SHIFTS,
                 INDEX_SHIFTS_GAME_ID,
                 INDEX_SHIFTS_TEAM_ID,
                 INDEX_SHIFTS_PLAYER_ID,
+                INDEX_SHIFTS_EVENT,
+                INDEX_SHIFTS_MULTIPLE,
             ];
             for x in &xs {
                 c.execute(x, NO_PARAMS).void();
@@ -506,7 +522,8 @@ fn main() {
                     }
                     t.commit().void()
                 }
-            }
+            };
+            c.execute("PRAGMA optimize;", NO_PARAMS).void();
         };
     };
 }
