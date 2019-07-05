@@ -9,8 +9,8 @@ from viz import export, rink
 
 
 def main():
-    # $ cd $WD
-    # $ cat sql/shots.sql | sql ruskie.db -csv > viz/data.csv
+    # $ cd $WD/viz/
+    # $ cat ../sql/shots.sql | sql ../ruskie.db -csv > data.csv
     data = read_csv("{}/viz/data.csv".format(environ["WD"]))
     data.sort_values("goal", inplace=True)
     _, ax = subplots(figsize=(5.5, 4.5))
