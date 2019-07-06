@@ -52,3 +52,4 @@ export -f rustfmts
 export -f clippy
 alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 --column --header"
+alias csvlook="csvlook --no-inference"

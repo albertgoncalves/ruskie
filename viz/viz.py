@@ -39,7 +39,7 @@ def unit_boards():
     )
 
 
-def rink(ax):
+def rink(ax, zorder=0):
     params = {
         "blueline_x": 29,
         "boards_y": 45,
@@ -59,7 +59,7 @@ def rink(ax):
         "pad": 1,
     }
     params["boardspad_y"] = params["boards_y"] - (params["pad"] * 0.75)
-    kwargs = {"alpha": 0.25, "zorder": 0}
+    kwargs = {"alpha": 0.25, "zorder": zorder}
     ax.set_xlim([
         params["boardsmin_x"] - params["pad"],
         params["boardsmax_x"] + params["pad"],

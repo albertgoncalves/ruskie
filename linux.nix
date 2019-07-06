@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> {} }:
 with pkgs; mkShell {
-    name = "Rust";
+    name = "ruskie";
     buildInputs = [
         (python37.withPackages(ps: with ps; [
             flake8
@@ -13,7 +13,11 @@ with pkgs; mkShell {
         rlwrap
         rustup
         sqlite
-    ];
+    ] ++ (with python37Packages; [
+        (csvkit.overridePythonAttrs (oldAttrs: {
+            doCheck = false;
+        }))
+    ]);
     shellHook = ''
         . .shellhook
     '';
