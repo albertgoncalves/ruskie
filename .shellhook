@@ -11,6 +11,8 @@ directories () {
         $WD/db/data/schedule
         $WD/db/data/events
         $WD/db/data/shifts
+        $WD/viz/data
+        $WD/viz/out
         $WD/model/data
         $WD/model/out
     )

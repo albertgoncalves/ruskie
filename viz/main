@@ -5,14 +5,12 @@ set -eu
 prelude () {
     x="$WD/viz/data/shots.csv"
     if [ ! -f $x ]; then
-        cat $WD/sql/shots.sql \
-            | sqlite3 -csv -header $WD/ruskie.db \
-            > $WD/viz/data/shots.csv
+        cat $WD/sql/shots.sql | sqlite3 -csv -header $WD/ruskie.db > $x
     fi
 }
 
 postlude () {
-    python $WD/viz/scripts/main.py
+    python $WD/viz/scripts/shots.py
     open $WD/viz/out/shots.png
 }
 
