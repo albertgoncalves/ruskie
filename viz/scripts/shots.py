@@ -20,7 +20,7 @@ def main():
         alpha=0.75,
     )
     rink(ax)
-    export(ax, "{}/viz/out/shots.png".format(environ["WD"]))
+    export("{}/viz/out/shots.png".format(environ["WD"]))
 
 
 if __name__ == "__main__":

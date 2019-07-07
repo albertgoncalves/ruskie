@@ -2,32 +2,35 @@
 
 set -eu
 
-export OBS="obs_data"
-export GEN="gen_data"
+export OBS="obs"
+export GEN="gen"
+export MODEL="a.model"
 
 prelude () {
     cd $WD/model/data/
     if [ ! -f "$OBS.csv" ]; then
         cat $WD/sql/shots.sql | sqlite3 -csv $WD/ruskie.db > "$OBS.csv"
+        python ../scripts/enhance.py "$OBS.csv"
     fi
     if [ ! -f "$GEN.libsvm" ]; then
         python ../scripts/generate.py "$GEN.csv"
+        python ../scripts/enhance.py "$GEN.csv"
     fi
-    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm" 1
-    head -n 10000 $OBS.libsvm > train.libsvm
-    tail -n+10001 $OBS.libsvm > test.libsvm
-    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm" 1
+    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
+    head -n 25000 $OBS.libsvm > train.libsvm
+    tail -n+25001 $OBS.libsvm > test.libsvm
+    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm"
 }
 
 interlude () {
     cd $WD/model/
-    $WD/xgboost/xgboost train.conf model_out="out/a.model"
+    $WD/xgboost/xgboost train.conf model_out="out/$MODEL"
     $WD/xgboost/xgboost \
         train.conf \
         test:data="data/$GEN.libsvm" \
-        model_in="out/a.model" \
+        model_in="out/$MODEL" \
         task=pred \
-        name_pred="out/preds.txt"
+        name_pred="out/pred.csv"
 }
 
 postlude () {

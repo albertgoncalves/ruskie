@@ -39,6 +39,13 @@ def unit_boards():
     )
 
 
+def aspect(ax):
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.axis("off")
+    ax.set_aspect("equal")
+
+
 def rink(ax, zorder=0):
     params = {
         "blueline_x": 29,
@@ -60,6 +67,7 @@ def rink(ax, zorder=0):
     }
     params["boardspad_y"] = params["boards_y"] - (params["pad"] * 0.75)
     kwargs = {"alpha": 0.25, "zorder": zorder}
+    aspect(ax)
     ax.set_xlim([
         params["boardsmin_x"] - params["pad"],
         params["boardsmax_x"] + params["pad"],
@@ -126,11 +134,7 @@ def rink(ax, zorder=0):
         ax.add_line(x)
 
 
-def export(ax, filename):
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.axis("off")
-    ax.set_aspect("equal")
+def export(filename):
     tight_layout()
     savefig(filename)
     close()
