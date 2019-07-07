@@ -22,6 +22,7 @@ directories () {
         fi
     done
     PATH="$PATH:$CARGO_HOME/bin"
+    PYTHONPATH="$PYTHONPATH:$WD/viz/scripts:$WD/model/scripts"
 }
 
 xgboost () {
