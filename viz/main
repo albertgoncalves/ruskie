@@ -3,9 +3,12 @@
 set -eu
 
 prelude () {
-    cat $WD/sql/shots.sql \
-        | sqlite3 -csv -header $WD/ruskie.db \
-        > $WD/viz/data/shots.csv
+    x="$WD/viz/data/shots.csv"
+    if [ ! -f $x ]; then
+        cat $WD/sql/shots.sql \
+            | sqlite3 -csv -header $WD/ruskie.db \
+            > $WD/viz/data/shots.csv
+    fi
 }
 
 postlude () {
