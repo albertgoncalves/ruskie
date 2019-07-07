@@ -26,6 +26,8 @@ with shots as (
         and s.event = ''
         and e.event in ('Goal', 'Missed Shot', 'Shot')
         and e.player_type in ('Scorer', 'Shooter')
+        and e.x is not null
+        and e.y is not null
     inner join
         players p
         on p.id = s.player_id
@@ -100,7 +102,12 @@ with shots as (
         , a.team_id as team_against
         , f.player_id
         , p.position
-        , p.shoots_catches
+        , case when p.shoots_catches = 'L'
+            then 1
+            else 0 end as shoots_left
+        , case when p.shoots_catches = 'R'
+            then 1
+            else 0 end as shoots_right
         , f.home
         , f.skaters as skaters_for
         , f.goalie as goalie_for
@@ -134,7 +141,12 @@ with shots as (
 )
 
 select
-    *
+    goal
+    , game_id
+    , x
+    , y
+    , shoots_left
+    , shoots_right
 from
     for_against
 where
@@ -143,9 +155,4 @@ where
     and goalie_for = 1
     and skaters_against = 5
     and goalie_against = 1
-order by
-    game_id
-    , period
-    , period_time
-    , team_for
 ;
