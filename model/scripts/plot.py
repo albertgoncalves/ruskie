@@ -2,8 +2,10 @@
 
 from os import environ
 
-from matplotlib.pyplot import close, savefig, subplots, tight_layout
+from matplotlib.pyplot import subplots
 from pandas import read_csv
+
+from viz import export, rink
 
 
 def data():
@@ -23,12 +25,10 @@ def data():
 def plot(lr):
     _, axs = subplots(2, 1, figsize=(5, 10))
     for (i, k) in enumerate(lr.keys()):
-        axs[i].tricontourf(lr[k].x, lr[k].y, lr[k].z)
-        axs[i].set_aspect("equal")
+        axs[i].tricontourf(lr[k].x, lr[k].y, lr[k].z, cmap="Oranges", alpha=0.5)
         axs[i].set_title(k)
-    tight_layout()
-    savefig("{}/model/out/plot.png".format(environ["WD"]))
-    close
+        rink(axs[i], zorder=3)
+    export("{}/model/out/plot.png".format(environ["WD"]))
 
 
 def main():
