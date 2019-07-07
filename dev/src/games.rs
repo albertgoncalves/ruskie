@@ -230,7 +230,7 @@ const INDEX_EVENTS_PENALTY_SEVERITY: &str =
 
 const INDEX_EVENTS_MULTIPLE: &str = {
     "CREATE INDEX index_events_multiple \
-     ON events(game_id, period, period_time, event, player_type);"
+     ON events(game_id, period, period_time, event, player_type, x, y);"
 };
 
 const INSERT_EVENTS: &str = {
