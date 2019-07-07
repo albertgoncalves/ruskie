@@ -13,10 +13,10 @@ prelude () {
     if [ ! -f "$GEN.libsvm" ]; then
         python ../scripts/generate.py "$GEN.csv"
     fi
-    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm" 1
+    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
     head -n 10000 $OBS.libsvm > train.libsvm
     tail -n+10001 $OBS.libsvm > test.libsvm
-    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm" 1
+    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm"
 }
 
 interlude () {
