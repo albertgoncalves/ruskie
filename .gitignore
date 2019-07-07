@@ -9,8 +9,9 @@
 !src/
 !*.toml
 !*.rs
-!dev/main
+!main
 !sql/
 !*.sql
 !viz/
 !*.py
+!model/
