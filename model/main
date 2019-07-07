@@ -10,9 +10,11 @@ prelude () {
     cd $WD/model/data/
     if [ ! -f "$OBS.csv" ]; then
         cat $WD/sql/shots.sql | sqlite3 -csv $WD/ruskie.db > "$OBS.csv"
+        python ../scripts/enhance.py "$OBS.csv"
     fi
     if [ ! -f "$GEN.libsvm" ]; then
         python ../scripts/generate.py "$GEN.csv"
+        python ../scripts/enhance.py "$GEN.csv"
     fi
     python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
     head -n 25000 $OBS.libsvm > train.libsvm
