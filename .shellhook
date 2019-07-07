@@ -8,9 +8,9 @@ directories () {
     xs=(
         $RUSTUP_HOME
         $CARGO_HOME/bin
-        $WD/data/schedule
-        $WD/data/events
-        $WD/data/shifts
+        $WD/db/data/schedule
+        $WD/db/data/events
+        $WD/db/data/shifts
         $WD/model/data
         $WD/model/out
     )
@@ -44,7 +44,7 @@ rust () {
 
 exports () {
     rustfmts() {
-        for f in $WD/dev/src/*.rs; do
+        for f in $1/*.rs; do
             echo $f
             rustfmt $f
         done

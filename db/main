@@ -30,7 +30,7 @@ interlude () {
         fi
     }
 
-    x="$WD/data/teams.json"
+    x="$WD/db/data/teams.json"
     if [ ! -f $x ]; then
         curl "https://statsapi.web.nhl.com/api/v1/teams" > $x
     fi
