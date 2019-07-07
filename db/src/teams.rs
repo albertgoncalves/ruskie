@@ -69,8 +69,10 @@ fn main() {
         if let Ok(mut c) = connect(&wd) {
             c.execute(CREATE_TEAMS, NO_PARAMS).void();
             if let Some(teams) = {
-                let teams: Option<Teams> =
-                    read_json(Path::new(&format!("{}/data/teams.json", &wd)));
+                let teams: Option<Teams> = read_json(Path::new(&format!(
+                    "{}/db/data/teams.json", //
+                    &wd,
+                )));
                 teams
             } {
                 insert(&mut c, &teams.teams);

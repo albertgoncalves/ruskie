@@ -10,9 +10,7 @@ Quick start
 ---
 ```
 $ ./shell
-[nix-shell:path/to/ruskie]$ cd dev/
-[nix-shell:path/to/ruskie/dev]$ ./main
-[nix-shell:path/to/ruskie/dev]$ cd ../viz/
-[nix-shell:path/to/ruskie/viz]$ cat ../sql/shots.sql | sql -csv ../ruskie.db > data.csv
-[nix-shell:path/to/ruskie/viz]$ python main.py && open shots.png
+[nix-shell:path/to/ruskie]$ ./db/main       # build Sqlite3 database
+[nix-shell:path/to/ruskie]$ ./viz/main      # generate visualization
+[nix-shell:path/to/ruskie]$ ./model/main    # generate XGBoost model
 ```

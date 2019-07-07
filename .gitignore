@@ -5,7 +5,7 @@
 !README.md
 !cover.png
 !*.nix
-!dev/
+!db/
 !src/
 !*.toml
 !*.rs

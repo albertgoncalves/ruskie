@@ -9,7 +9,7 @@ use std::time::Duration;
 
 #[inline]
 pub fn filename<T: Display>(wd: &str, directory: &str, id: T) -> PathBuf {
-    [wd, "data", directory, &format!("{}.json", id)]
+    [wd, "db", "data", directory, &format!("{}.json", id)]
         .iter()
         .collect()
 }
