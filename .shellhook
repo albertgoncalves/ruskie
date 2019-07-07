@@ -12,7 +12,7 @@ directories () {
         $WD/data/events
         $WD/data/shifts
         $WD/model/data
-        $WD/model/models
+        $WD/model/out
     )
     for x in "${xs[@]}"; do
         if [ ! -d $x ]; then
@@ -70,5 +70,5 @@ else
     alias open="xdg-open"
 fi
 alias rusttest="cargo test -q"
-alias sql="rlwrap sqlite3 --column --header"
+alias sql="rlwrap sqlite3 -column -header"
 alias csvlook="csvlook --no-inference"
