@@ -8,7 +8,7 @@ use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::{OptionExt, ResultExt};
 use rayon::prelude::*;
-use rusqlite::{Connection, NO_PARAMS};
+use rusqlite::{Connection, ToSql, NO_PARAMS};
 use serde::Deserialize;
 use serde_json::Number;
 use std::env::var;
@@ -146,15 +146,15 @@ fn insert(schedule: Schedule, c: &mut Connection) {
             for date in schedule.dates {
                 for game in date.games {
                     p.execute(&[
-                        &game.gamePk.to_string(),
+                        &game.gamePk.to_string() as &ToSql,
                         &game.status.abstractGameState,
                         &game.status.detailedState,
-                        &game.status.startTimeTBD.to_string(),
+                        &game.status.startTimeTBD,
                         &date.date,
                         &game.gameType,
                         &game.season,
-                        &game.teams.home.team.id.to_string(),
-                        &game.teams.away.team.id.to_string(),
+                        &game.teams.home.team.id,
+                        &game.teams.away.team.id,
                         &game.venue.name,
                     ])
                     .void()

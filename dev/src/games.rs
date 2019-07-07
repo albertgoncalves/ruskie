@@ -9,7 +9,7 @@ use crate::scrape::{filename, get_to_file};
 use crate::sql::connect;
 use crate::void::ResultExt;
 use rayon::prelude::*;
-use rusqlite::{Connection, NO_PARAMS};
+use rusqlite::{Connection, ToSql, NO_PARAMS};
 use serde::Deserialize;
 use serde_json::Number;
 use std::collections::HashMap;
@@ -341,14 +341,11 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
     if let Ok(mut p) = t.prepare(INSERT_PLAYERS) {
         for (_, player) in team.players {
             p.execute(&[
-                &player.person.id.to_string(),
-                game_id,
-                &team.team.id.to_string(),
+                &player.person.id.to_string() as &ToSql,
+                &game_id,
+                &team.team.id,
                 &player.person.fullName,
-                &player
-                    .person
-                    .shootsCatches
-                    .unwrap_or_else(|| "NULL".to_string()),
+                &player.person.shootsCatches,
                 &player.person.rosterStatus,
                 &player.position.abbreviation,
             ])
@@ -377,11 +374,6 @@ fn parse_time(t: &str) -> Option<u16> {
 }
 
 #[inline]
-fn or_null<T: ToString>(x: Option<T>) -> String {
-    x.map_or_else(|| "NULL".to_string(), |y| y.to_string())
-}
-
-#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     if let Ok(mut p) = t.prepare(INSERT_EVENTS) {
         for play in events.liveData.plays.allPlays {
@@ -394,28 +386,25 @@ fn insert_events(t: &Connection, game_id: &str, events: Events) {
                 parse_time(&play.about.periodTime),
                 parse_time(&play.about.periodTimeRemaining),
             ) {
-                let event_id: String = play.about.eventId.to_string();
-                let team_id: String = or_null(play.team.map(|t| t.id));
+                let event_id: u16 = play.about.eventId;
+                let team_id: Option<u16> = play.team.map(|t| t.id);
                 let event: String = play.result.event;
-                let secondary_type: String =
-                    or_null(play.result.secondaryType);
-                let penalty_severity: String =
-                    or_null(play.result.penaltySeverity);
-                let penalty_minutes: String =
-                    or_null(play.result.penaltyMinutes);
-                let period: String = play.about.period.to_string();
+                let secondary_type: Option<String> = play.result.secondaryType;
+                let penalty_severity: Option<String> =
+                    play.result.penaltySeverity;
+                let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
+                let period: u8 = play.about.period;
                 let period_type: String = play.about.periodType;
-                let period_time: String = period_time.to_string();
-                let period_time_remaining: String =
-                    period_time_remaining.to_string();
-                let goals_away: String = play.about.goals.away.to_string();
-                let goals_home: String = play.about.goals.home.to_string();
-                let x: String = or_null(play.coordinates.and_then(|c| c.x));
-                let y: String = or_null(play.coordinates.and_then(|c| c.y));
+                let period_time: u16 = period_time;
+                let period_time_remaining: u16 = period_time_remaining;
+                let goals_away: u8 = play.about.goals.away;
+                let goals_home: u8 = play.about.goals.home;
+                let x: Option<f64> = play.coordinates.and_then(|c| c.x);
+                let y: Option<f64> = play.coordinates.and_then(|c| c.y);
                 for player in players {
                     p.execute(&[
-                        &event_id,
-                        game_id,
+                        &event_id as &ToSql,
+                        &game_id,
                         &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
@@ -446,14 +435,14 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
                 (parse_time(&shift.startTime), parse_time(&shift.endTime))
             {
                 p.execute(&[
-                    &shift.gameId.to_string(),
-                    &shift.teamId.to_string(),
+                    &shift.gameId.to_string() as &ToSql,
+                    &shift.teamId,
                     &shift.playerId.to_string(),
-                    &shift.period.to_string(),
-                    &start_time.to_string(),
-                    &end_time.to_string(),
-                    &or_null(shift.duration.and_then(|d| parse_time(&d))),
-                    &shift.shiftNumber.to_string(),
+                    &shift.period,
+                    &start_time,
+                    &end_time,
+                    &shift.duration.and_then(|d| parse_time(&d)),
+                    &shift.shiftNumber,
                     &shift.eventDescription.unwrap_or_else(|| "".to_string()),
                 ])
                 .void()
