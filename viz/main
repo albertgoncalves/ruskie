@@ -12,7 +12,7 @@ prelude () {
 }
 
 postlude () {
-    python $WD/viz/scripts/main.py
+    python $WD/viz/scripts/shots.py
     open $WD/viz/out/shots.png
 }
 
