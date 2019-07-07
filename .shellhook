@@ -1,55 +1,74 @@
 #!/usr/bin/env bash
 
+export WD=$(pwd)
+export RUSTUP_HOME="$WD/.rustup_home"
+export CARGO_HOME="$WD/.cargo_home"
+
+directories () {
+    xs=(
+        $RUSTUP_HOME
+        $CARGO_HOME/bin
+        $WD/data/schedule
+        $WD/data/events
+        $WD/data/shifts
+        $WD/model/data
+        $WD/model/out
+    )
+    for x in "${xs[@]}"; do
+        if [ ! -d $x ]; then
+            mkdir -p $x
+        fi
+    done
+    PATH="$PATH:$CARGO_HOME/bin"
+}
+
+xgboost () {
+    if [ ! -d xgboost/ ]; then
+        git clone --recursive https://github.com/dmlc/xgboost
+        cd xgboost/
+        make -j4
+        cd ../
+    fi
+}
+
+rust () {
+    if [ ! -f .init ]; then
+        rustup install stable
+        rustup default stable
+        rustup component add rustfmt
+        rustup component add clippy
+        touch .init
+    fi
+    rustup update
+}
+
+exports () {
+    rustfmts() {
+        for f in $WD/dev/src/*.rs; do
+            echo $f
+            rustfmt $f
+        done
+    }
+
+    clippy() {
+        cargo clippy -- -D warnings -W clippy::pedantic
+    }
+
+    export -f rustfmts
+    export -f clippy
+}
+
+directories
+xgboost
+rust
+exports
+
 if [ $(uname -s) = "Darwin" ]; then
     alias ls='ls --color=auto'
     alias ll='ls -l'
 else
     alias open="xdg-open"
 fi
-
-export WD=$(pwd)
-export RUSTUP_HOME="$WD/.rustup_home"
-export CARGO_HOME="$WD/.cargo_home"
-
-xs=(
-    $RUSTUP_HOME
-    $CARGO_HOME/bin
-    $WD/data/schedule
-    $WD/data/events
-    $WD/data/shifts
-)
-
-for x in "${xs[@]}"; do
-    if [ ! -d $x ]; then
-        mkdir -p $x
-    fi
-done
-
-PATH="$PATH:$CARGO_HOME/bin"
-
-if [ ! -f .init ]; then
-    rustup install stable
-    rustup default stable
-    rustup component add rustfmt
-    rustup component add clippy
-    touch .init
-fi
-
-rustup update
-
-rustfmts() {
-    for f in $WD/dev/src/*.rs; do
-        echo $f
-        rustfmt $f
-    done
-}
-
-clippy() {
-    cargo clippy -- -D warnings -W clippy::pedantic
-}
-
-export -f rustfmts
-export -f clippy
 alias rusttest="cargo test -q"
-alias sql="rlwrap sqlite3 --column --header"
+alias sql="rlwrap sqlite3 -column -header"
 alias csvlook="csvlook --no-inference"

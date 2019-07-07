@@ -7,7 +7,10 @@ with pkgs; mkShell {
             matplotlib
             pandas
         ]))
+        gcc8
         jq
+        llvmPackages.openmp
+        llvmPackages.libcxxClang
         pkg-config
         openssl
         rlwrap

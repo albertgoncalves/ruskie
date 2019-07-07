@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -eu
+
+prelude () {
+    x="$WD/viz/data/shots.csv"
+    if [ ! -f $x ]; then
+        cat $WD/sql/shots.sql \
+            | sqlite3 -csv -header $WD/ruskie.db \
+            > $WD/viz/data/shots.csv
+    fi
+}
+
+postlude () {
+    python $WD/viz/scripts/main.py
+    open $WD/viz/out/shots.png
+}
+
+main () {
+    prelude
+    postlude
+}
+
+main

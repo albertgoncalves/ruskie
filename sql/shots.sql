@@ -142,7 +142,6 @@ with shots as (
 
 select
     goal
-    , game_id
     , x
     , y
     , shoots_left

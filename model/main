@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -eu
+
+export OBS="obs_data"
+export GEN="gen_data"
+
+prelude () {
+    cd $WD/model/data/
+    if [ ! -f "$OBS.csv" ]; then
+        cat $WD/sql/shots.sql | sqlite3 -csv $WD/ruskie.db > "$OBS.csv"
+    fi
+    if [ ! -f "$GEN.libsvm" ]; then
+        python ../scripts/generate.py "$GEN.csv"
+    fi
+    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm" 1
+    head -n 10000 $OBS.libsvm > train.libsvm
+    tail -n+10001 $OBS.libsvm > test.libsvm
+    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm" 1
+}
+
+interlude () {
+    cd $WD/model/
+    $WD/xgboost/xgboost train.conf model_out="out/a.model"
+    $WD/xgboost/xgboost \
+        train.conf \
+        test:data="data/$GEN.libsvm" \
+        model_in="out/a.model" \
+        task=pred \
+        name_pred="out/preds.txt"
+}
+
+postlude () {
+    python scripts/plot.py
+    open out/plot.png
+}
+
+main () {
+    prelude
+    interlude
+    postlude
+}
+
+main
