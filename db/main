@@ -11,7 +11,7 @@ set -eu
 prelude () {
     clippy
     cargo test -q --bin games
-    rustfmts
+    rustfmts src
     if [ "$flag" = "debug" ]; then
         cargo build
     else
@@ -68,7 +68,7 @@ postlude () {
 }
 
 main () {
-    cd $WD/dev
+    cd $WD/db/
     prelude
     interlude
     postlude
