@@ -13,13 +13,13 @@ def main():
     data.sort_values("goal", inplace=True)
     _, ax = subplots(figsize=(5.5, 4.5))
     ax.scatter(
-        data.x,
         data.y,
+        data.x,
         c=data.goal.map({0: "c", 1: "tomato"}),
         s=25,
         alpha=0.75,
     )
-    rink(ax)
+    rink(ax, zorder=3)
     export("{}/viz/out/shots.png".format(environ["WD"]))
 
 

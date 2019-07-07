@@ -23,22 +23,21 @@ def data():
 
 
 def plot(lr):
-    _, axs = subplots(3, 1, figsize=(4, 12))
+    _, axs = subplots(1, 3, figsize=(16, 7))
     axs[0].tricontourf(
-        lr["left"].x,
         lr["left"].y,
+        lr["left"].x,
         lr["left"].a,
         cmap="PuBuGn",
-        alpha=0.75,
     )
     axs[0].set_title("aperture")
     for (i, k) in enumerate(lr.keys()):
         axs[i + 1].tricontourf(
-            lr[k].x,
             lr[k].y,
+            lr[k].x,
             lr[k].z,
-            cmap="Oranges",
-            alpha=0.5,
+            cmap="Reds",
+            alpha=0.8,
         )
         axs[i + 1].set_title(k)
     for i in range(3):
