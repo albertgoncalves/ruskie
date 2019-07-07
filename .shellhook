@@ -5,8 +5,6 @@ export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 
 directories () {
-    set -eu
-
     xs=(
         $RUSTUP_HOME
         $CARGO_HOME/bin
@@ -14,6 +12,7 @@ directories () {
         $WD/data/events
         $WD/data/shifts
         $WD/model/data
+        $WD/model/models
     )
     for x in "${xs[@]}"; do
         if [ ! -d $x ]; then
@@ -24,8 +23,6 @@ directories () {
 }
 
 xgboost () {
-    set -eu
-
     if [ ! -d xgboost/ ]; then
         git clone --recursive https://github.com/dmlc/xgboost
         cd xgboost/
@@ -35,8 +32,6 @@ xgboost () {
 }
 
 rust () {
-    set -eu
-
     if [ ! -f .init ]; then
         rustup install stable
         rustup default stable
@@ -48,8 +43,6 @@ rust () {
 }
 
 exports () {
-    set -eu
-
     rustfmts() {
         for f in $WD/dev/src/*.rs; do
             echo $f
