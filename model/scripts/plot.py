@@ -43,7 +43,7 @@ def plot(lr):
         axs[i + 1].set_title(k)
     for i in range(3):
         rink(axs[i], zorder=3)
-    export("{}/model/out/plot.png".format(environ["WD"]))
+    export("{}/model/out/model.png".format(environ["WD"]))
 
 
 def main():

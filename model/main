@@ -36,9 +36,9 @@ interlude () {
 postlude () {
     python scripts/plot.py
     if [ $(uname -s) = "Darwin" ]; then
-        open out/plot.png
+        open out/model.png
     else
-        xdg-open out/plot.png
+        xdg-open out/model.png
     fi
 }
 
