@@ -16,3 +16,4 @@
 !*.py
 !model/
 !*.conf
+!scripts/
