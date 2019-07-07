@@ -27,10 +27,15 @@ directories () {
 xgboost () {
     if [ ! -d xgboost/ ]; then
         git clone --recursive https://github.com/dmlc/xgboost
-        cd xgboost/
-        make -j4
-        cd ../
     fi
+    cd xgboost/
+    if [ ! $(uname -s) = "Darwin" ]; then
+        mkdir -p build/
+        cd build/
+        cmake ../
+    fi
+    make -j4
+    cd $WD
 }
 
 rust () {

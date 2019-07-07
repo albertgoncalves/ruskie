@@ -32,7 +32,11 @@ interlude () {
 
 postlude () {
     python scripts/plot.py
-    open out/plot.png
+    if [ $(uname -s) = "Darwin" ]; then
+        open out/plot.png
+    else
+        xdg-open out/plot.png
+    fi
 }
 
 main () {

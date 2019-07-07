@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> {} }:
-with pkgs; mkShell {
+with pkgs; stdenvNoCC.mkDerivation {
     name = "ruskie";
     buildInputs = [
         (python37.withPackages(ps: with ps; [
@@ -7,10 +7,9 @@ with pkgs; mkShell {
             matplotlib
             pandas
         ]))
-        gcc8
+        cmake
+        gcc8Stdenv
         jq
-        llvmPackages.openmp
-        llvmPackages.libcxxClang
         pkg-config
         openssl
         rlwrap

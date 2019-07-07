@@ -11,7 +11,11 @@ prelude () {
 
 postlude () {
     python $WD/viz/scripts/shots.py
-    open $WD/viz/out/shots.png
+    if [ $(uname -s) = "Darwin" ]; then
+        open $WD/viz/out/shots.png
+    else
+        xdg-open $WD/viz/out/shots.png
+    fi
 }
 
 main () {
