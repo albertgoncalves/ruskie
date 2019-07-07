@@ -7,18 +7,18 @@ prelude () {
     if [ ! -f data.csv ]; then
         cat $WD/sql/shots.sql | sqlite3 -csv $WD/ruskie.db > data.csv
     fi
-    python ../convert.py data.csv data.libsvm
+    python ../scripts/convert.py data.csv data.libsvm
     head -n 5000 data.libsvm > train.libsvm
     tail -n+5001 data.libsvm > test.libsvm
 }
 
 postlude () {
     cd $WD/model/
-    $WD/xgboost/xgboost train.conf model_out="models/0005.model"
+    $WD/xgboost/xgboost train.conf model_out="models/a.model"
     $WD/xgboost/xgboost \
         train.conf \
         test:data="data/test.libsvm" \
-        model_in="models/0005.model" \
+        model_in="models/a.model" \
         task=pred \
         name_pred="data/preds.txt"
 }
