@@ -2,8 +2,9 @@
 
 set -eu
 
-export OBS="obs_data"
-export GEN="gen_data"
+export OBS="obs"
+export GEN="gen"
+export MODEL="a.model"
 
 prelude () {
     cd $WD/model/data/
@@ -21,13 +22,13 @@ prelude () {
 
 interlude () {
     cd $WD/model/
-    $WD/xgboost/xgboost train.conf model_out="out/a.model"
+    $WD/xgboost/xgboost train.conf model_out="out/$MODEL"
     $WD/xgboost/xgboost \
         train.conf \
         test:data="data/$GEN.libsvm" \
-        model_in="out/a.model" \
+        model_in="out/$MODEL" \
         task=pred \
-        name_pred="out/preds.txt"
+        name_pred="out/pred.csv"
 }
 
 postlude () {

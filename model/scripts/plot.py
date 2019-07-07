@@ -8,28 +8,31 @@ from pandas import read_csv
 
 def data():
     X = read_csv(
-        "{}/model/data/gen_data.csv".format(environ["WD"]),
+        "{}/model/data/gen.csv".format(environ["WD"]),
         names=["_", "x", "y", "l", "r"],
     )
-    Y = read_csv("{}/model/out/preds.txt".format(environ["WD"]), names=["z"])
+    Y = read_csv("{}/model/out/pred.csv".format(environ["WD"]), names=["z"])
     X["z"] = Y.z
     rows = X["l"] == 1.0
-    return (X.loc[rows], X.loc[~rows])
+    return {
+        "left": X.loc[rows],
+        "right": X.loc[~rows],
+    }
 
 
-def plot(a, b):
+def plot(lr):
     _, axs = subplots(2, 1, figsize=(5, 10))
-    axs[0].tricontourf(a.x, a.y, a.z)
-    axs[1].tricontourf(b.x, b.y, b.z)
-    for i in range(2):
+    for (i, k) in enumerate(lr.keys()):
+        axs[i].tricontourf(lr[k].x, lr[k].y, lr[k].z)
         axs[i].set_aspect("equal")
+        axs[i].set_title(k)
     tight_layout()
     savefig("{}/model/out/plot.png".format(environ["WD"]))
     close
 
 
 def main():
-    plot(*data())
+    plot(data())
 
 
 if __name__ == "__main__":
