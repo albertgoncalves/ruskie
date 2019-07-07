@@ -15,8 +15,8 @@ prelude () {
         python ../scripts/generate.py "$GEN.csv"
     fi
     python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
-    head -n 10000 $OBS.libsvm > train.libsvm
-    tail -n+10001 $OBS.libsvm > test.libsvm
+    head -n 25000 $OBS.libsvm > train.libsvm
+    tail -n+25001 $OBS.libsvm > test.libsvm
     python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm"
 }
 
