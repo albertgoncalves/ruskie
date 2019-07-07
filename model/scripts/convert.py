@@ -10,11 +10,13 @@ def transform(csv, libsvm, flag):
             libsvm.write(str(int(xs[0])))
             for i in range(len(xs) - 1):
                 y = float(xs[i + 1])
-                libsvm.write(" {}:{}".format(i, y))
+                if y != 0.0:
+                    libsvm.write(" {}:{}".format(i, y))
         else:
             for i in range(len(xs)):
                 y = float(xs[i])
-                libsvm.write(" {}:{}".format(i, y))
+                if y != 0.0:
+                    libsvm.write(" {}:{}".format(i, y))
         libsvm.write("\n")
 
 
