@@ -17,6 +17,7 @@ xs=(
     $WD/data/schedule
     $WD/data/events
     $WD/data/shifts
+    $WD/model/data
 )
 
 for x in "${xs[@]}"; do
