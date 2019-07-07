@@ -66,34 +66,34 @@ def rink(ax, zorder=0):
         "pad": 1,
     }
     params["boardspad_y"] = params["boards_y"] - (params["pad"] * 0.75)
-    kwargs = {"alpha": 0.25, "zorder": zorder}
+    kwargs = {"alpha": 0.275, "zorder": zorder}
     aspect(ax)
-    ax.set_xlim([
+    ax.set_ylim([
         params["boardsmin_x"] - params["pad"],
         params["boardsmax_x"] + params["pad"],
     ])
-    ax.set_ylim([
+    ax.set_xlim([
         (params["boards_y"] + params["pad"]) * -1,
         params["boards_y"] + params["pad"],
     ])
     boards_xs, boards_ys = unit_boards()
     ax.plot(
-        boards_xs * params["boardsmax_x"],
         (boards_ys * params["boards_y"] * 2) - params["boards_y"],
+        boards_xs * params["boardsmax_x"],
         lw=3.5,
         c="k",
         **kwargs,
     )
     ax.add_patch(patches.Rectangle(
-        (params["goal_x"], params["goal_y"]),
-        params["goal_width"],
+        (params["goal_y"], params["goal_x"]),
         params["goal_height"],
-        color="k",
+        params["goal_width"],
+        facecolor="k",
         **kwargs,
     ))
     for (z, angle) in [(-1, 0), (1, 90)]:
         ax.add_patch(patches.Circle(
-            (params["faceoff_x"], params["faceoff_y"] * z),
+            (params["faceoff_y"] * z, params["faceoff_x"]),
             params["faceoff_radius"],
             lw=2,
             fill=None,
@@ -101,29 +101,29 @@ def rink(ax, zorder=0):
         ))
     xs = [
         lines.Line2D(
-            [params["goal_x"], params["goal_x"]],
             [params["goalline_y"] * -1, params["goalline_y"]],
-            c="r",
+            [params["goal_x"], params["goal_x"]],
+            c="k",
             lw=2,
             **kwargs,
         ),
         lines.Line2D(
-            [params["centerline_x"], params["centerline_x"]],
             [params["boardspad_y"] * -1, params["boardspad_y"]],
+            [params["centerline_x"], params["centerline_x"]],
             c="r",
             lw=7,
             **kwargs,
         ),
         lines.Line2D(
-            [params["blueline_x"], params["blueline_x"]],
             [params["boardspad_y"] * -1, params["boardspad_y"]],
+            [params["blueline_x"], params["blueline_x"]],
             c="b",
             lw=7,
             **kwargs,
         ),
         lines.Line2D(
-            [params["boardsmin_x"], params["boardsmax_x"]],
             [params["centerline_y"], params["centerline_y"]],
+            [params["boardsmin_x"], params["boardsmax_x"]],
             c="k",
             lw=1.5,
             ls="--",
