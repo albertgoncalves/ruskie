@@ -9,9 +9,7 @@ from viz import export, rink
 
 
 def main():
-    # $ cd $WD/viz/
-    # $ cat ../sql/shots.sql | sql -csv ../ruskie.db > data.csv
-    data = read_csv("{}/viz/data.csv".format(environ["WD"]))
+    data = read_csv("{}/viz/data/shots.csv".format(environ["WD"]))
     data.sort_values("goal", inplace=True)
     _, ax = subplots(figsize=(5.5, 4.5))
     ax.scatter(
@@ -22,7 +20,7 @@ def main():
         alpha=0.75,
     )
     rink(ax)
-    export(ax, "{}/viz/shots.png".format(environ["WD"]))
+    export(ax, "{}/viz/out/shots.png".format(environ["WD"]))
 
 
 if __name__ == "__main__":
