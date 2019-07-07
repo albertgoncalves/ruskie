@@ -7,8 +7,11 @@ with pkgs; mkShell {
             matplotlib
             pandas
         ]))
+        gcc8
         gtk2
         jq
+        llvmPackages.openmp
+        llvmPackages.libcxxClang
         rlwrap
         rustup
         sqlite
