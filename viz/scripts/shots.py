@@ -19,7 +19,7 @@ def main():
         s=25,
         alpha=0.75,
     )
-    rink(ax, zorder=3)
+    rink(ax)
     export("{}/viz/out/shots.png".format(environ["WD"]))
 
 

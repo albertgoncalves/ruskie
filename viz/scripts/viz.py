@@ -46,7 +46,7 @@ def aspect(ax):
     ax.set_aspect("equal")
 
 
-def rink(ax, zorder=0):
+def rink(ax, zorder=2):
     params = {
         "blueline_x": 29,
         "boards_y": 45,
