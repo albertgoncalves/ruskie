@@ -24,9 +24,9 @@ prelude () {
 
 interlude () {
     cd $WD/model/
-    $WD/xgboost/xgboost train.conf model_out="out/$MODEL"
+    $WD/xgboost/xgboost model.conf model_out="out/$MODEL"
     $WD/xgboost/xgboost \
-        train.conf \
+        model.conf \
         test:data="data/$GEN.libsvm" \
         model_in="out/$MODEL" \
         task=pred \
