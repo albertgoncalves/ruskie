@@ -14,8 +14,11 @@ def transform(csv, libsvm):
                     libsvm.write(" {}:{}".format(i, y))
             libsvm.write("\n")
         except Exception as e:
-            print(e)
-            print(argv[1], x)
+            print("error\t: {}\nargv[1]\t: {}\nline\t: {}".format(
+                e,
+                argv[1],
+                x,
+            ))
             exit(1)
 
 
