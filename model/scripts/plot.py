@@ -23,25 +23,26 @@ def data():
 
 
 def plot(lr):
-    _, axs = subplots(1, 3, figsize=(16, 7))
-    axs[0].tricontourf(
+    fig, axs = subplots(2, 2, figsize=(9, 12))
+    fig.delaxes(axs[0, 1])
+    axs[0, 0].tricontourf(
         lr["left"].y,
         lr["left"].x,
         lr["left"].a,
         cmap="PuBuGn",
     )
-    axs[0].set_title("aperture")
+    axs[0, 0].set_title("aperture")
+    rink(axs[0, 0])
     for (i, k) in enumerate(lr.keys()):
-        axs[i + 1].tricontourf(
+        axs[1, i].tricontourf(
             lr[k].y,
             lr[k].x,
             lr[k].z,
             cmap="Reds",
             alpha=0.8,
         )
-        axs[i + 1].set_title(k)
-    for i in range(3):
-        rink(axs[i], zorder=3)
+        axs[1, i].set_title(k)
+        rink(axs[1, i])
     export("{}/model/out/model.png".format(environ["WD"]))
 
 
