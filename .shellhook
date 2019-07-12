@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 export WD=$(pwd)
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
@@ -80,3 +82,5 @@ fi
 alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 -column -header"
 alias csvlook="csvlook --no-inference"
+
+set +eu
