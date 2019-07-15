@@ -443,7 +443,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
                     &end_time,
                     &shift.duration.and_then(|d| parse_time(&d)),
                     &shift.shiftNumber,
-                    &shift.eventDescription.unwrap_or_else(|| "".to_string()),
+                    &shift.eventDescription.unwrap_or_else(|| "".to_owned()),
                 ])
                 .void()
             }
