@@ -54,7 +54,7 @@ rust () {
 
 exports () {
     rustfmts() {
-        for f in $1/*.rs; do
+        for f in $WD/db/src/*.rs; do
             echo $f
             rustfmt $f
         done
