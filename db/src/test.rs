@@ -28,7 +28,7 @@ mod test {
     #[test]
     fn gamePk_string() {
         let json: Game = serde_json::from_str(INPUT).unwrap();
-        assert_eq!(json.gamePk.to_owned(), N.to_string())
+        assert_eq!(json.gamePk.to_string(), N.to_string())
     }
 
     #[test]
