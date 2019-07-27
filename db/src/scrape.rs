@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::thread::sleep;
 use std::time::Duration;
 
-#[inline]
 pub fn filename<T: Display>(wd: &str, directory: &str, id: T) -> PathBuf {
     [wd, "db", "data", directory, &format!("{}.json", id)]
         .iter()

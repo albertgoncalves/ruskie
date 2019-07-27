@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-#[inline]
 pub fn read_json<D: DeserializeOwned>(path: &Path) -> Option<D> {
     println!("{}", path.display());
     File::open(path)

@@ -111,7 +111,6 @@ const INSERT_GAMES: &str = {
      ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10);"
 };
 
-#[inline]
 fn url(id: u32, start: &str, end: &str) -> String {
     format!(
         "https://statsapi.web.nhl.com/api/v1/schedule?\
@@ -124,7 +123,6 @@ fn url(id: u32, start: &str, end: &str) -> String {
     )
 }
 
-#[inline]
 fn scrape(
     start: &str,
     end: &str,
@@ -139,7 +137,6 @@ fn scrape(
     })
 }
 
-#[inline]
 fn insert(schedule: Schedule, c: &mut Connection) {
     if let Ok(t) = c.transaction() {
         if let Ok(mut p) = t.prepare(INSERT_GAMES) {

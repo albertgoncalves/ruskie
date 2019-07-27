@@ -300,14 +300,12 @@ const INDEX_SHIFTS_MULTIPLE: &str = {
      ON shifts(event, period, start_time, end_time);"
 };
 
-#[inline]
 fn scrape(wd: &str, id: &str, directory: &str, url: &str) -> PathBuf {
     let x: PathBuf = filename(wd, directory, id);
     get_to_file(url, x.as_path(), 1500);
     x
 }
 
-#[inline]
 fn events_url(id: &str) -> String {
     format!(
         "https://statsapi.web.nhl.com/api/v1/game/{}/feed/live?site=en_nhl",
@@ -315,7 +313,6 @@ fn events_url(id: &str) -> String {
     )
 }
 
-#[inline]
 fn shifts_url(id: &str) -> String {
     format!(
         "http://www.nhl.com/stats/rest/shiftcharts?cayenneExp=gameId={}",
@@ -323,7 +320,6 @@ fn shifts_url(id: &str) -> String {
     )
 }
 
-#[inline]
 fn scrape_pair<'a>(
     wd: &'a str,
     id: &Option<String>,
@@ -336,7 +332,6 @@ fn scrape_pair<'a>(
     })
 }
 
-#[inline]
 fn insert_player(t: &Connection, game_id: &str, team: Team) {
     if let Ok(mut p) = t.prepare(INSERT_PLAYERS) {
         for (_, player) in team.players {
@@ -354,13 +349,11 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
     }
 }
 
-#[inline]
 fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
     insert_player(t, game_id, away);
     insert_player(t, game_id, home);
 }
 
-#[inline]
 fn parse_time(t: &str) -> Option<u16> {
     if let [minutes, seconds] = t.split(':').collect::<Vec<&str>>().as_slice()
     {
@@ -373,7 +366,6 @@ fn parse_time(t: &str) -> Option<u16> {
     }
 }
 
-#[inline]
 fn insert_events(t: &Connection, game_id: &str, events: Events) {
     if let Ok(mut p) = t.prepare(INSERT_EVENTS) {
         for play in events.liveData.plays.allPlays {
