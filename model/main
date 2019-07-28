@@ -7,9 +7,9 @@ export GEN="gen"
 export MODEL="a.model"
 
 prelude () {
-    cd $WD/model/data/
+    cd "$WD/model/data/"
     if [ ! -f "$OBS.csv" ]; then
-        cat $WD/sql/shots.sql | sqlite3 -csv $WD/ruskie.db > "$OBS.csv"
+        sqlite3 -csv "$WD/ruskie.db" < "$WD/sql/shots.sql" > "$OBS.csv"
         python ../scripts/enhance.py "$OBS.csv"
     fi
     if [ ! -f "$GEN.libsvm" ]; then
@@ -23,9 +23,9 @@ prelude () {
 }
 
 interlude () {
-    cd $WD/model/
-    $WD/xgboost/xgboost model.conf model_out="out/$MODEL"
-    $WD/xgboost/xgboost \
+    cd "$WD/model/"
+    "$WD/xgboost/xgboost" model.conf model_out="out/$MODEL"
+    "$WD/xgboost/xgboost" \
         model.conf \
         test:data="data/$GEN.libsvm" \
         model_in="out/$MODEL" \
@@ -35,7 +35,7 @@ interlude () {
 
 postlude () {
     python scripts/plot.py
-    if [ $(uname -s) = "Darwin" ]; then
+    if [ "$(uname -s)" = "Darwin" ]; then
         open out/model.png
     else
         xdg-open out/model.png
