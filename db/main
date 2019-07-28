@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
     flag=""
 else
     flag=$1
@@ -31,8 +31,8 @@ interlude () {
     }
 
     x="$WD/db/data/teams.json"
-    if [ ! -f $x ]; then
-        curl "https://statsapi.web.nhl.com/api/v1/teams" > $x
+    if [ ! -f "$x" ]; then
+        curl "https://statsapi.web.nhl.com/api/v1/teams" > "$x"
     fi
     if [ "$flag" = "debug" ]; then
         cargo run --bin teams
@@ -50,8 +50,8 @@ interlude () {
 
 postlude () {
     f () {
-        printf "\nsql $1\n"
-        rlwrap sqlite3 --column --header $WD/ruskie.db "$1"
+        printf "\nsql %s\n" "$1"
+        rlwrap sqlite3 --column --header "$WD/ruskie.db" "$1"
     }
 
     for x in teams schedule; do
@@ -68,7 +68,7 @@ postlude () {
 }
 
 main () {
-    cd $WD/db/
+    cd "$WD/db/"
     prelude
     interlude
     postlude
