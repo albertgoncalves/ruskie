@@ -14,6 +14,7 @@ with pkgs; mkShell {
         llvmPackages.libcxxClang
         rlwrap
         rustup
+        shellcheck
         sqlite
     ] ++ (with python37Packages; [
         (csvkit.overridePythonAttrs (oldAttrs: {

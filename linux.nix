@@ -14,6 +14,7 @@ with pkgs; stdenvNoCC.mkDerivation {
         openssl
         rlwrap
         rustup
+        shellcheck
         sqlite
     ] ++ (with python37Packages; [
         (csvkit.overridePythonAttrs (oldAttrs: {
