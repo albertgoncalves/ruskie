@@ -2,25 +2,33 @@
 
 set -eu
 
-export WD=$(pwd)
+if [ "$(uname -s)" = "Darwin" ]; then
+    alias ls='ls --color=auto'
+    alias ll='ls -l'
+else
+    alias open="xdg-open"
+fi
+
+export WD
+WD=$(pwd)
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 
 directories () {
     xs=(
-        $RUSTUP_HOME
-        $CARGO_HOME/bin
-        $WD/db/data/schedule
-        $WD/db/data/events
-        $WD/db/data/shifts
-        $WD/viz/data
-        $WD/viz/out
-        $WD/model/data
-        $WD/model/out
+        "$RUSTUP_HOME"
+        "$CARGO_HOME/bin"
+        "$WD/db/data/schedule"
+        "$WD/db/data/events"
+        "$WD/db/data/shifts"
+        "$WD/viz/data"
+        "$WD/viz/out"
+        "$WD/model/data"
+        "$WD/model/out"
     )
     for x in "${xs[@]}"; do
-        if [ ! -d $x ]; then
-            mkdir -p $x
+        if [ ! -d "$x" ]; then
+            mkdir -p "$x"
         fi
     done
     PATH="$PATH:$CARGO_HOME/bin"
@@ -32,13 +40,13 @@ xgboost () {
         git clone --recursive https://github.com/dmlc/xgboost
     fi
     cd xgboost/
-    if [ ! $(uname -s) = "Darwin" ]; then
+    if [ ! "$(uname -s)" = "Darwin" ]; then
         mkdir -p build/
         cd build/
         cmake ../
     fi
     make -j4
-    cd $WD
+    cd "$WD"
 }
 
 rust () {
@@ -54,9 +62,9 @@ rust () {
 
 exports () {
     rustfmts() {
-        for f in $WD/db/src/*.rs; do
-            echo $f
-            rustfmt $f
+        for f in "$WD"/db/src/*.rs; do
+            echo "$f"
+            rustfmt "$f"
         done
     }
 
@@ -73,12 +81,6 @@ xgboost
 rust
 exports
 
-if [ $(uname -s) = "Darwin" ]; then
-    alias ls='ls --color=auto'
-    alias ll='ls -l'
-else
-    alias open="xdg-open"
-fi
 alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 -column -header"
 alias csvlook="csvlook --no-inference"
