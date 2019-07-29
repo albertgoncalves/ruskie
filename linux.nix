@@ -1,6 +1,6 @@
-{ pkgs ? import <nixpkgs> {} }:
-with pkgs; stdenvNoCC.mkDerivation {
-    name = "ruskie";
+with import <nixpkgs> {};
+stdenvNoCC.mkDerivation {
+    name = "_";
     buildInputs = [
         (python37.withPackages(ps: with ps; [
             flake8

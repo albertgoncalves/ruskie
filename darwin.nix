@@ -1,6 +1,5 @@
-{ pkgs ? import <nixpkgs> {} }:
-with pkgs; mkShell {
-    name = "ruskie";
+with import <nixpkgs> {};
+mkShell {
     buildInputs = [
         (python37.withPackages(ps: with ps; [
             flake8
