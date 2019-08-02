@@ -25,7 +25,7 @@ struct Result {
     penaltyMinutes: Option<u8>,
 }
 
-#[derive(Deserialize, Copy, Clone)]
+#[derive(Deserialize)]
 struct Coordinates {
     x: Option<f64>,
     y: Option<f64>,
@@ -60,13 +60,13 @@ struct Participant {
     playerType: String,
 }
 
-#[derive(Deserialize, Copy, Clone)]
+#[derive(Deserialize)]
 struct TeamId {
     id: u16,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Person {
     id: Number,
     fullName: String,
@@ -74,12 +74,12 @@ struct Person {
     rosterStatus: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Position {
     abbreviation: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Player {
     person: Person,
     position: Position,
@@ -100,13 +100,13 @@ struct Plays {
     allPlays: Vec<Event>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Team {
     team: TeamId,
     players: HashMap<String, Player>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Teams {
     home: Team,
     away: Team,
@@ -332,9 +332,9 @@ fn scrape_pair<'a>(
     })
 }
 
-fn insert_player(t: &Connection, game_id: &str, team: Team) {
+fn insert_player(t: &Connection, game_id: &str, team: &Team) {
     if let Ok(mut p) = t.prepare(INSERT_PLAYERS) {
-        for (_, player) in team.players {
+        for player in team.players.values() {
             p.execute(&[
                 &player.person.id.to_string() as &ToSql,
                 &game_id,
@@ -349,7 +349,7 @@ fn insert_player(t: &Connection, game_id: &str, team: Team) {
     }
 }
 
-fn insert_players(t: &Connection, game_id: &str, away: Team, home: Team) {
+fn insert_players(t: &Connection, game_id: &str, away: &Team, home: &Team) {
     insert_player(t, game_id, away);
     insert_player(t, game_id, home);
 }
@@ -366,50 +366,40 @@ fn parse_time(t: &str) -> Option<u16> {
     }
 }
 
-fn insert_events(t: &Connection, game_id: &str, events: Events) {
+fn insert_events(t: &Connection, game_id: &str, events: &Events) {
     if let Ok(mut p) = t.prepare(INSERT_EVENTS) {
-        for play in events.liveData.plays.allPlays {
+        for play in &events.liveData.plays.allPlays {
             if let (
                 Some(players),
                 Some(period_time),
                 Some(period_time_remaining),
             ) = (
-                play.players,
+                &play.players,
                 parse_time(&play.about.periodTime),
                 parse_time(&play.about.periodTimeRemaining),
             ) {
-                let event_id: u16 = play.about.eventId;
-                let team_id: Option<u16> = play.team.map(|t| t.id);
-                let event: String = play.result.event;
-                let secondary_type: Option<String> = play.result.secondaryType;
-                let penalty_severity: Option<String> =
-                    play.result.penaltySeverity;
-                let penalty_minutes: Option<u8> = play.result.penaltyMinutes;
-                let period: u8 = play.about.period;
-                let period_type: String = play.about.periodType;
-                let period_time: u16 = period_time;
-                let period_time_remaining: u16 = period_time_remaining;
-                let goals_away: u8 = play.about.goals.away;
-                let goals_home: u8 = play.about.goals.home;
-                let x: Option<f64> = play.coordinates.and_then(|c| c.x);
-                let y: Option<f64> = play.coordinates.and_then(|c| c.y);
-                for player in players {
+                let team_id: Option<u16> = play.team.as_ref().map(|t| t.id);
+                let x: Option<f64> =
+                    play.coordinates.as_ref().and_then(|c| c.x);
+                let y: Option<f64> =
+                    play.coordinates.as_ref().and_then(|c| c.y);
+                for player in players.iter() {
                     p.execute(&[
-                        &event_id as &ToSql,
+                        &play.about.eventId as &ToSql,
                         &game_id,
                         &team_id,
                         &player.player.id.to_string(),
                         &player.playerType,
-                        &event,
-                        &secondary_type,
-                        &penalty_severity,
-                        &penalty_minutes,
-                        &period,
-                        &period_type,
+                        &play.result.event,
+                        &play.result.secondaryType,
+                        &play.result.penaltySeverity,
+                        &play.result.penaltyMinutes,
+                        &play.about.period,
+                        &play.about.periodType,
                         &period_time,
                         &period_time_remaining,
-                        &goals_away,
-                        &goals_home,
+                        &play.about.goals.away,
+                        &play.about.goals.home,
                         &x,
                         &y,
                     ])
@@ -488,12 +478,12 @@ fn main() {
                     for pair in pairs {
                         if let Some((events, shifts)) = pair {
                             let game_id: String = events.gamePk.to_string();
-                            let away: Team =
-                                events.liveData.boxscore.teams.away.clone();
-                            let home: Team =
-                                events.liveData.boxscore.teams.home.clone();
+                            let away: &Team =
+                                &events.liveData.boxscore.teams.away;
+                            let home: &Team =
+                                &events.liveData.boxscore.teams.home;
                             insert_players(&t, &game_id, away, home);
-                            insert_events(&t, &game_id, events);
+                            insert_events(&t, &game_id, &events);
                             insert_shifts(&t, shifts)
                         }
                     }
