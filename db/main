@@ -8,70 +8,58 @@ fi
 
 set -eu
 
-prelude () {
-    clippy
-    cargo test -q --bin games
-    rustfmts src
+cd "$WD/db/"
+clippy
+cargo test -q --bin games
+for f in teams schedule games; do
+    rustfmt -v src/$f.rs
+done
+if [ "$flag" = "debug" ]; then
+    cargo build
+else
+    cargo build --release
+fi
+
+schedule () {
+    export START=$1
+    export END=$2
     if [ "$flag" = "debug" ]; then
-        cargo build
+        cargo run --bin schedule
     else
-        cargo build --release
+        cargo run --bin schedule --release
     fi
 }
 
-interlude () {
-    f () {
-        export START=$1
-        export END=$2
-        if [ "$flag" = "debug" ]; then
-            cargo run --bin schedule
-        else
-            cargo run --bin schedule --release
-        fi
-    }
+x="$WD/db/data/teams.json"
+if [ ! -f "$x" ]; then
+    curl "https://statsapi.web.nhl.com/api/v1/teams" > "$x"
+fi
+if [ "$flag" = "debug" ]; then
+    cargo run --bin teams
+else
+    cargo run --bin teams --release
+fi
+schedule "2017-08-01" "2018-08-01"
+schedule "2018-08-01" "2019-08-01"
+if [ "$flag" = "debug" ]; then
+    cargo run --bin games
+else
+    cargo run --bin games --release
+fi
 
-    x="$WD/db/data/teams.json"
-    if [ ! -f "$x" ]; then
-        curl "https://statsapi.web.nhl.com/api/v1/teams" > "$x"
-    fi
-    if [ "$flag" = "debug" ]; then
-        cargo run --bin teams
-    else
-        cargo run --bin teams --release
-    fi
-    f "2017-08-01" "2018-08-01"
-    f "2018-08-01" "2019-08-01"
-    if [ "$flag" = "debug" ]; then
-        cargo run --bin games
-    else
-        cargo run --bin games --release
-    fi
+query () {
+    printf "\nsql %s\n" "$1"
+    rlwrap sqlite3 --column --header "$WD/ruskie.db" "$1"
 }
 
-postlude () {
-    f () {
-        printf "\nsql %s\n" "$1"
-        rlwrap sqlite3 --column --header "$WD/ruskie.db" "$1"
-    }
-
-    for x in teams schedule; do
-        f "SELECT COUNT(*) FROM $x;"
-        f "SELECT COUNT(DISTINCT id) FROM $x;"
-    done
-    for x in players events shifts; do
-        f "SELECT COUNT(*) FROM $x"
-        f "SELECT COUNT(DISTINCT game_id) FROM $x;"
-    done
-    for x in events shifts; do
-        f "SELECT COUNT(DISTINCT player_id) FROM $x;"
-    done
-}
-
-main () {
-    cd "$WD/db/"
-    prelude
-    interlude
-    postlude
-}
-
-main
+for x in teams schedule; do
+    query "SELECT COUNT(*) FROM $x;"
+    query "SELECT COUNT(DISTINCT id) FROM $x;"
+done
+for x in players events shifts; do
+    query "SELECT COUNT(*) FROM $x"
+    query "SELECT COUNT(DISTINCT game_id) FROM $x;"
+done
+for x in events shifts; do
+    query "SELECT COUNT(DISTINCT player_id) FROM $x;"
+done

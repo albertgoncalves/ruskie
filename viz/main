@@ -2,25 +2,14 @@
 
 set -eu
 
-prelude () {
-    x="$WD/viz/data/shots.csv"
-    if [ ! -f "$x" ]; then
-        sqlite3 -csv -header "$WD/ruskie.db" < "$WD/sql/shots.sql" > "$x"
-    fi
-}
+x="$WD/viz/data/shots.csv"
+if [ ! -f "$x" ]; then
+    sqlite3 -csv -header "$WD/ruskie.db" < "$WD/sql/shots.sql" > "$x"
+fi
 
-postlude () {
-    python "$WD/viz/scripts/shots.py"
-    if [ "$(uname -s)" = "Darwin" ]; then
-        open "$WD/viz/out/shots.png"
-    else
-        xdg-open "$WD/viz/out/shots.png"
-    fi
-}
-
-main () {
-    prelude
-    postlude
-}
-
-main
+python "$WD/viz/scripts/shots.py"
+if [ "$(uname -s)" = "Darwin" ]; then
+    open "$WD/viz/out/shots.png"
+else
+    xdg-open "$WD/viz/out/shots.png"
+fi

@@ -14,75 +14,54 @@ WD=$(pwd)
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 
-directories () {
-    xs=(
-        "$RUSTUP_HOME"
-        "$CARGO_HOME/bin"
-        "$WD/db/data/schedule"
-        "$WD/db/data/events"
-        "$WD/db/data/shifts"
-        "$WD/viz/data"
-        "$WD/viz/out"
-        "$WD/model/data"
-        "$WD/model/out"
-    )
-    for x in "${xs[@]}"; do
-        if [ ! -d "$x" ]; then
-            mkdir -p "$x"
-        fi
-    done
-    PATH="$PATH:$CARGO_HOME/bin"
-    PYTHONPATH="$PYTHONPATH:$WD/viz/scripts:$WD/model/scripts"
-}
-
-xgboost () {
-    if [ ! -d xgboost/ ]; then
-        git clone --recursive https://github.com/dmlc/xgboost
+xs=(
+    "$RUSTUP_HOME"
+    "$CARGO_HOME/bin"
+    "$WD/db/data/schedule"
+    "$WD/db/data/events"
+    "$WD/db/data/shifts"
+    "$WD/viz/data"
+    "$WD/viz/out"
+    "$WD/model/data"
+    "$WD/model/out"
+)
+for x in "${xs[@]}"; do
+    if [ ! -d "$x" ]; then
+        mkdir -p "$x"
     fi
-    cd xgboost/
-    if [ ! "$(uname -s)" = "Darwin" ]; then
-        mkdir -p build/
-        cd build/
-        cmake ../
-    fi
-    make -j4
-    cd "$WD"
+done
+PATH="$PATH:$CARGO_HOME/bin"
+PYTHONPATH="$PYTHONPATH:$WD/viz/scripts:$WD/model/scripts"
+
+if [ ! -d xgboost/ ]; then
+    git clone --recursive https://github.com/dmlc/xgboost
+fi
+cd xgboost/
+if [ ! "$(uname -s)" = "Darwin" ]; then
+    mkdir -p build/
+    cd build/
+    cmake ../
+fi
+make -j4
+cd "$WD"
+
+if [ ! -f .init ]; then
+    rustup install stable
+    rustup default stable
+    rustup component add rustfmt
+    rustup component add clippy
+    touch .init
+fi
+rustup update
+
+clippy() {
+    cargo clippy -- -D warnings -W clippy::pedantic
 }
 
-rust () {
-    if [ ! -f .init ]; then
-        rustup install stable
-        rustup default stable
-        rustup component add rustfmt
-        rustup component add clippy
-        touch .init
-    fi
-    rustup update
-}
-
-exports () {
-    rustfmts() {
-        for f in "$WD"/db/src/*.rs; do
-            echo "$f"
-            rustfmt "$f"
-        done
-    }
-
-    clippy() {
-        cargo clippy -- -D warnings -W clippy::pedantic
-    }
-
-    export -f rustfmts
-    export -f clippy
-}
-
-directories
-xgboost
-rust
-exports
-
+export -f clippy
+alias csvlook="csvlook --no-inference"
+alias rustfmt="rustfmt -v"
 alias rusttest="cargo test -q"
 alias sql="rlwrap sqlite3 -column -header"
-alias csvlook="csvlook --no-inference"
 
 set +eu

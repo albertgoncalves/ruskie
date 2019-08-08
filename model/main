@@ -6,46 +6,32 @@ export OBS="obs"
 export GEN="gen"
 export MODEL="a.model"
 
-prelude () {
-    cd "$WD/model/data/"
-    if [ ! -f "$OBS.csv" ]; then
-        sqlite3 -csv "$WD/ruskie.db" < "$WD/sql/shots.sql" > "$OBS.csv"
-        python ../scripts/enhance.py "$OBS.csv"
-    fi
-    if [ ! -f "$GEN.libsvm" ]; then
-        python ../scripts/generate.py "$GEN.csv"
-        python ../scripts/enhance.py "$GEN.csv"
-    fi
-    python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
-    head -n 25000 $OBS.libsvm > train.libsvm
-    tail -n+25001 $OBS.libsvm > test.libsvm
-    python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm"
-}
+cd "$WD/model/data/"
+if [ ! -f "$OBS.csv" ]; then
+    sqlite3 -csv "$WD/ruskie.db" < "$WD/sql/shots.sql" > "$OBS.csv"
+    python ../scripts/enhance.py "$OBS.csv"
+fi
+if [ ! -f "$GEN.libsvm" ]; then
+    python ../scripts/generate.py "$GEN.csv"
+    python ../scripts/enhance.py "$GEN.csv"
+fi
+python ../scripts/convert.py "$OBS.csv" "$OBS.libsvm"
+head -n 25000 $OBS.libsvm > train.libsvm
+tail -n+25001 $OBS.libsvm > test.libsvm
+python ../scripts/convert.py "$GEN.csv" "$GEN.libsvm"
 
-interlude () {
-    cd "$WD/model/"
-    "$WD/xgboost/xgboost" model.conf model_out="out/$MODEL"
-    "$WD/xgboost/xgboost" \
-        model.conf \
-        test:data="data/$GEN.libsvm" \
-        model_in="out/$MODEL" \
-        task=pred \
-        name_pred="out/pred.csv"
-}
+cd "$WD/model/"
+"$WD/xgboost/xgboost" model.conf model_out="out/$MODEL"
+"$WD/xgboost/xgboost" \
+    model.conf \
+    test:data="data/$GEN.libsvm" \
+    model_in="out/$MODEL" \
+    task=pred \
+    name_pred="out/pred.csv"
 
-postlude () {
-    python scripts/plot.py
-    if [ "$(uname -s)" = "Darwin" ]; then
-        open out/model.png
-    else
-        xdg-open out/model.png
-    fi
-}
-
-main () {
-    prelude
-    interlude
-    postlude
-}
-
-main
+python scripts/plot.py
+if [ "$(uname -s)" = "Darwin" ]; then
+    open out/model.png
+else
+    xdg-open out/model.png
+fi
