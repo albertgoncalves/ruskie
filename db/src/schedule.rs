@@ -143,7 +143,7 @@ fn insert(schedule: Schedule, c: &mut Connection) {
             for date in schedule.dates {
                 for game in date.games {
                     p.execute(&[
-                        &game.gamePk.to_string() as &ToSql,
+                        &game.gamePk.to_string() as &dyn ToSql,
                         &game.status.abstractGameState,
                         &game.status.detailedState,
                         &game.status.startTimeTBD,

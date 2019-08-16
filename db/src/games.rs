@@ -336,7 +336,7 @@ fn insert_player(t: &Connection, game_id: &str, team: &Team) {
     if let Ok(mut p) = t.prepare(INSERT_PLAYERS) {
         for player in team.players.values() {
             p.execute(&[
-                &player.person.id.to_string() as &ToSql,
+                &player.person.id.to_string() as &dyn ToSql,
                 &game_id,
                 &team.team.id,
                 &player.person.fullName,
@@ -357,12 +357,12 @@ fn insert_players(t: &Connection, game_id: &str, away: &Team, home: &Team) {
 fn parse_time(t: &str) -> Option<u16> {
     if let [minutes, seconds] = t.split(':').collect::<Vec<&str>>().as_slice()
     {
-        return minutes
+        minutes
             .parse::<u16>()
             .and_then(|m| seconds.parse::<u16>().map(|s| (m * 60) + s))
-            .ok();
+            .ok()
     } else {
-        return None;
+        None
     }
 }
 
@@ -385,7 +385,7 @@ fn insert_events(t: &Connection, game_id: &str, events: &Events) {
                     play.coordinates.as_ref().and_then(|c| c.y);
                 for player in players.iter() {
                     p.execute(&[
-                        &play.about.eventId as &ToSql,
+                        &play.about.eventId as &dyn ToSql,
                         &game_id,
                         &team_id,
                         &player.player.id.to_string(),
@@ -417,7 +417,7 @@ fn insert_shifts(t: &Connection, shifts: Shifts) {
                 (parse_time(&shift.startTime), parse_time(&shift.endTime))
             {
                 p.execute(&[
-                    &shift.gameId.to_string() as &ToSql,
+                    &shift.gameId.to_string() as &dyn ToSql,
                     &shift.teamId,
                     &shift.playerId.to_string(),
                     &shift.period,

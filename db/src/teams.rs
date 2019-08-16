@@ -52,7 +52,7 @@ fn insert(c: &mut Connection, teams: &[Team]) {
         if let Ok(mut p) = t.prepare(INSERT_TEAMS) {
             for team in teams {
                 p.execute(&[
-                    &team.id as &ToSql,
+                    &team.id as &dyn ToSql,
                     &team.abbreviation,
                     &team.name,
                     &team.venue.name,
