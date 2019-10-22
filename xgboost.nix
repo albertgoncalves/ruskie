@@ -1,5 +1,5 @@
 with import <nixpkgs> {};
-stdenvNoCC.mkDerivation {
+gccStdenv.mkDerivation {
     name = "_";
     buildInputs = [
         (python37.withPackages(ps: with ps; [
@@ -8,14 +8,13 @@ stdenvNoCC.mkDerivation {
             pandas
         ]))
         csvkit
-        gcc8Stdenv
         jq
+        git
         rlwrap
         rustup
         shellcheck
         sqlite
     ];
     shellHook = ''
-        . .shellhook
     '';
 }

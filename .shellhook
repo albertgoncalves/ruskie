@@ -9,8 +9,10 @@ else
     alias open="xdg-open"
 fi
 
-export WD
-WD=$(pwd)
+export WD=$PWD
+
+./xgboost.sh
+
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 
@@ -31,19 +33,14 @@ for x in "${xs[@]}"; do
     fi
 done
 PATH="$PATH:$CARGO_HOME/bin"
-PYTHONPATH="$PYTHONPATH:$WD/viz/scripts:$WD/model/scripts"
 
-if [ ! -d xgboost/ ]; then
-    git clone --recursive https://github.com/dmlc/xgboost
+set +eu
+if [ -n "$PYTHONPATH" ]; then
+    PYTHONPATH="$WD/viz/scripts:$WD/model/scripts"
+else
+    PYTHONPATH="$PYTHONPATH:$WD/viz/scripts:$WD/model/scripts"
 fi
-cd xgboost/
-if [ ! "$(uname -s)" = "Darwin" ]; then
-    mkdir -p build/
-    cd build/
-    cmake ../
-fi
-make -j4
-cd "$WD"
+set -eu
 
 if [ ! -f .init ]; then
     rustup install stable
