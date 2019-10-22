@@ -8,6 +8,7 @@ stdenvNoCC.mkDerivation {
             pandas
         ]))
         cmake
+        csvkit
         gcc8Stdenv
         jq
         pkg-config
@@ -16,11 +17,7 @@ stdenvNoCC.mkDerivation {
         rustup
         shellcheck
         sqlite
-    ] ++ (with python37Packages; [
-        (csvkit.overridePythonAttrs (oldAttrs: {
-            doCheck = false;
-        }))
-    ]);
+    ];
     shellHook = ''
         . .shellhook
     '';
