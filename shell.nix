@@ -14,14 +14,15 @@ let
         shellcheck
         sqlite
     ];
+    hook = ''
+        . .shellhook
+    '';
 in
 {
     darwin = stdenvNoCC.mkDerivation {
         name = "_";
         buildInputs = shared;
-        shellHook = ''
-            . .shellhook
-        '';
+        shellHook = hook;
     };
     linux = stdenvNoCC.mkDerivation {
         name = "_";
@@ -30,9 +31,7 @@ in
             openssl_1_0_2
             pkg-config
         ] ++ shared;
-        shellHook = ''
-            . .shellhook
-        '';
+        shellHook = hook;
     };
     xgboost = gccStdenv.mkDerivation {
         name = "_";
