@@ -11,8 +11,6 @@ fi
 
 export WD=$PWD
 
-./xgboost.sh
-
 export RUSTUP_HOME="$WD/.rustup_home"
 export CARGO_HOME="$WD/.cargo_home"
 

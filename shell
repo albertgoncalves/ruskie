@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+./xgboost.sh
+
 if [ "$(uname -s)" = "Darwin" ]; then
     nix-shell ./shell.nix --attr darwin
 else
