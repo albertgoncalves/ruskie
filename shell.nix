@@ -17,30 +17,27 @@ let
 in
 
 {
-    linux = 
-        stdenvNoCC.mkDerivation {
-            name = "_";
-            buildInputs = [
-                cmake
-                openssl_1_0_2
-                pkg-config
-            ] ++ shared;
-            shellHook = ''
-                . .shellhook
-            '';
-        };
-    darwin = 
-        stdenvNoCC.mkDerivation {
-            name = "_";
-            buildInputs = shared;
-            shellHook = ''
-                . .shellhook
-            '';
-        };
-    xgboost = 
-        gccStdenv.mkDerivation {
-            name = "_";
-            buildInputs = [];
-            shellHook = "";
-        };
+    linux = stdenvNoCC.mkDerivation {
+        name = "_";
+        buildInputs = [
+            cmake
+            openssl_1_0_2
+            pkg-config
+        ] ++ shared;
+        shellHook = ''
+            . .shellhook
+        '';
+    };
+    darwin = stdenvNoCC.mkDerivation {
+        name = "_";
+        buildInputs = shared;
+        shellHook = ''
+            . .shellhook
+        '';
+    };
+    xgboost = gccStdenv.mkDerivation {
+        name = "_";
+        buildInputs = [];
+        shellHook = "";
+    };
 }
