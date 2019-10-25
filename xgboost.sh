@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell xgboost.nix -i bash
+#!nix-shell shell.nix --attr xgboost -i bash
 
 if [ ! -d xgboost/ ]; then
     git clone --recursive https://github.com/dmlc/xgboost
