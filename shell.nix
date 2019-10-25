@@ -22,7 +22,7 @@ in
             name = "_";
             buildInputs = [
                 cmake
-                openssl
+                openssl_1_0_2
                 pkg-config
             ] ++ shared;
             shellHook = ''
