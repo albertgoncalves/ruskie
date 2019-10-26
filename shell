@@ -3,7 +3,7 @@
 ./xgboost.sh
 
 if [ "$(uname -s)" = "Darwin" ]; then
-    nix-shell ./shell.nix --attr darwin
+    nix-shell shell.nix --attr darwin
 else
-    nix-shell ./shell.nix --attr linux
+    nix-shell shell.nix --attr linux
 fi
