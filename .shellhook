@@ -49,6 +49,8 @@ if [ ! -f .init ]; then
 fi
 rustup update
 
+export RUSTFLAGS="-C target-cpu=native"
+
 clippy() {
     cargo clippy -- -D warnings -W clippy::pedantic
 }
